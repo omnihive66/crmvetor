@@ -1,0 +1,8 @@
+ordem de foco no login:
+  input[username] outline=solid 2px rgb(8, 116, 67)
+  input[password] outline=solid 2px rgb(8, 116, 67)
+  a[Esqueceu?] outline=solid 2px rgb(8, 116, 67)
+  button[submit] outline=solid 2px rgb(8, 116, 67)
+Enter no formulário: logado em /
+zoom 200% quadro: rolagem horizontal da página = 11px
+zoom 200% card: rolagem horizontal da página = 0px

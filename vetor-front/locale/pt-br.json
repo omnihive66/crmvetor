@@ -1,0 +1,144 @@
+{
+  "COMMON": {
+    "GENERIC_ERROR": "Ocorreu um erro: {{error}}.",
+    "TAG_LINE": "CRM e Gestão de Projetos",
+    "TAG_LINE_2": "CRM e Gestão de Projetos"
+  },
+  "LOGIN": {
+    "PAGE_TITLE": "Entrar - Vetor Sistemas",
+    "PAGE_DESCRIPTION": "Acesso à Vetor Sistemas, CRM e Gestão de Projetos."
+  },
+  "LOGIN_COMMON": {
+    "HEADER": "Já tenho acesso à Vetor Sistemas",
+    "PLACEHOLDER_AUTH_NAME": "Usuário ou e-mail"
+  },
+  "LOGIN_FORM": {
+    "ERROR_AUTH_INCORRECT": "Usuário, e-mail ou senha incorretos.",
+    "SUCCESS": "Bem-vindo à Vetor Sistemas."
+  },
+  "REGISTER": {
+    "PAGE_TITLE": "Cadastro - Vetor Sistemas",
+    "PAGE_DESCRIPTION": "Crie sua conta na Vetor Sistemas."
+  },
+  "REGISTER_FORM": {
+    "TITLE": "Criar conta na Vetor Sistemas"
+  },
+  "FORGOT_PASSWORD": {
+    "PAGE_TITLE": "Recuperar acesso - Vetor Sistemas",
+    "PAGE_DESCRIPTION": "Informe seu usuário ou e-mail para receber as instruções de acesso."
+  },
+  "FORGOT_PASSWORD_FORM": {
+    "TITLE": "Recuperar acesso",
+    "SUBTITLE": "Informe seu usuário ou e-mail para receber as instruções.",
+    "ACTION_RESET_PASSWORD": "Enviar instruções",
+    "LINK_CANCEL": "Voltar para o login",
+    "SUCCESS_TITLE": "Verifique seu e-mail",
+    "SUCCESS_TEXT": "Se houver uma conta com esses dados, enviaremos as instruções para definir uma nova senha.",
+    "ERROR": "Não foi possível processar o pedido. Tente novamente."
+  },
+  "CHANGE_PASSWORD": {
+    "PAGE_TITLE": "Alterar senha - Vetor Sistemas"
+  },
+  "CHANGE_PASSWORD_RECOVERY_FORM": {
+    "TITLE": "Criar nova senha",
+    "SUCCESS": "Sua nova senha foi salva.<br /> Tente <strong>entrar</strong> com ela."
+  },
+  "INVITATION": {
+    "PAGE_TITLE": "Aceitar convite - Vetor Sistemas",
+    "PAGE_DESCRIPTION": "Aceite o convite para participar de um projeto na Vetor Sistemas."
+  },
+  "INVITATION_LOGIN_FORM": {
+    "NOT_FOUND": "Convite não encontrado."
+  },
+  "HOME": {
+    "PAGE_TITLE": "Início - Vetor Sistemas",
+    "PAGE_DESCRIPTION": "Seus projetos e as demandas atribuídas ou observadas por você.",
+    "EMPTY_WORKING_ON": "<strong>Nada por aqui ainda.</strong> As histórias, tarefas e problemas em que você trabalhar aparecerão aqui."
+  },
+  "PROJECTS": {
+    "PAGE_TITLE": "Meus projetos - Vetor Sistemas"
+  },
+  "DISCOVER": {
+    "PAGE_TITLE": "Descobrir projetos - Vetor Sistemas",
+    "PAGE_DESCRIPTION": "Projetos públicos da Vetor Sistemas.",
+    "SEARCH": {
+      "PAGE_TITLE": "Buscar - Descobrir projetos - Vetor Sistemas",
+      "PAGE_DESCRIPTION": "Projetos públicos da Vetor Sistemas."
+    }
+  },
+  "ATTACHMENT": {
+    "ERROR_MAX_SIZE_EXCEEDED": "'{{fileName}}' ({{fileSize}}) é maior que o tamanho máximo permitido ({{maxFileSize}})."
+  },
+  "ADMIN": {
+    "PROJECT_EXPORT": {
+      "ERROR": "Não foi possível gerar a exportação. Tente novamente.",
+      "ERROR_BUSY": "O sistema está sobrecarregado no momento. Tente novamente em alguns minutos."
+    },
+    "PROJECT_PROFILE": {
+      "FEEDBACK": "Receber feedback de usuários?"
+    }
+  },
+  "USER": {
+    "PROFILE": {
+      "CURRENT_USER_CONTACTS_EMPTY_EXPLAIN": "As pessoas que trabalham com você aparecerão aqui como contatos."
+    }
+  },
+  "PROJECT": {
+    "NAVIGATION": {
+      "ACTION_CREATE_PROJECT_FIRST_TEXT": "Você ainda não tem projetos. Crie um e convide sua equipe.",
+      "TAIGA_COMMUNITY": "Ajuda, código-fonte e créditos",
+      "TAIGA_COMMUNITY_TITLE": "Ajuda, código-fonte e créditos (baseado no Taiga, AGPL-3.0)"
+    },
+    "IMPORT": {
+      "ASYNC_IN_PROGRESS_TITLE": "Importando seu projeto",
+      "ERROR": "Não foi possível importar os dados. Tente novamente.",
+      "ERROR_TOO_MANY_REQUEST": "O sistema está sobrecarregado no momento. Tente novamente em alguns minutos.",
+      "ERROR_MESSAGE": "Não foi possível importar os dados: {{error_message}}",
+      "ERROR_MAX_SIZE_EXCEEDED": "'{{fileName}}' ({{fileSize}}) é maior que o tamanho máximo permitido ({{maxFileSize}})."
+    },
+    "CREATE": {
+      "IMPORT_DESC": "Importar um projeto de outras plataformas"
+    }
+  },
+  "LIGHTBOX": {
+    "DELETE_ACCOUNT": {
+      "CONFIRM": "Tem certeza de que deseja excluir sua conta?"
+    },
+    "ADD_MEMBER": {
+      "HELP_TEXT": "Pessoas que já têm conta são adicionadas na hora. As demais recebem um convite por e-mail."
+    }
+  },
+  "ERROR": {
+    "TEXT1": "Algo deu errado e o erro foi registrado.",
+    "VERSION_ERROR": "Outra pessoa alterou este item antes de você, e suas mudanças não puderam ser aplicadas. Copie suas alterações, recarregue a página e aplique-as novamente, ou elas serão perdidas.",
+    "NOT_FOUND_TEXT": "Erro 404. A página que você procura não existe ou você não tem acesso a ela. Volte para o início e tente de novo."
+  },
+  "NOTIFICATION": {
+    "SAVED": "Alterações salvas.",
+    "COMMUNICATION": "Comunicações"
+  },
+  "CANCEL_ACCOUNT": {
+    "SUBTITLE": "Sua conta será encerrada.",
+    "SUCCESS": "Sua conta foi removida."
+  },
+  "USER_PROFILE": {
+    "ACTION_DELETE_ACCOUNT": "Excluir conta",
+    "ACTION_DOWNLOAD_PROFILE": "Baixar dados do perfil"
+  },
+  "TIMELINE": {
+    "NEW_USER": "{{username}} entrou na Vetor Sistemas"
+  },
+  "EXTERNAL_APP": {
+    "AUTHORIZATION_REQUEST": "Autorizar {{application}} a usar sua conta da Vetor Sistemas?"
+  },
+  "JOYRIDE": {
+    "DASHBOARD": {
+      "STEP3": {
+        "TEXT2": "Você já está trabalhando ;)"
+      },
+      "STEP4": {
+        "TEXT1": "Comece criando seu primeiro projeto."
+      }
+    }
+  }
+}

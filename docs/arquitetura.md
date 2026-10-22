@@ -4,8 +4,8 @@ A Vetor Sistemas é uma instalação do Taiga oficial, sem fork do núcleo, com 
 
 ```
 navegador ──► taiga-gateway (nginx :9000)
-               ├─ /            taiga-front  (SPA oficial + plugin de front da Vetor, a partir da SPEC-01)
-               ├─ /api/        taiga-back   (API oficial + app Django da Vetor, a partir da SPEC-03)
+               ├─ /            taiga-front  (imagem vetor/taiga-front: SPA oficial + marca aplicada no build)
+               ├─ /api/        taiga-back   (imagem vetor/taiga-back: API oficial + app Django `vetor`)
                ├─ /events      taiga-events (WebSocket) ◄── taiga-events-rabbitmq
                └─ /media/      taiga-protected (token assinado)
              taiga-async (Celery) ◄── taiga-async-rabbitmq
@@ -24,7 +24,11 @@ navegador ──► taiga-gateway (nginx :9000)
 | `docs/` | arquitetura, inventário, decisões, entregas e evidências |
 | `specs/`, `DESIGN.md`, `COMANDOS.md`, `RASTREABILIDADE.md` | o pacote de especificação |
 
-Extensões futuras: `vetor-back/` (app Django) e `vetor-front/` (plugin `contribPlugins`), montados nos containers oficiais pelo override.
+| `vetor-front/` | `Dockerfile` + `build.py`: aplica paleta, logos, textos pt-BR e título sobre o build oficial do front (decisão 0003) |
+| `vetor-back/` | `Dockerfile`, `settings/config.py` e o app Django `vetor` (rotas, traduções e templates de e-mail; decisão 0002) |
+| `scripts/qa/` | capturas de tela, teclado/zoom e menu por papel (Playwright) |
+
+`./scripts/vetor.sh up` reconstrói as duas imagens derivadas (rápido, com cache) e reinicia o gateway.
 
 ## Operação local
 

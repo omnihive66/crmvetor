@@ -1,0 +1,28 @@
+{#
+Derivado de taiga/base/templates/emails/includes/footer.jinja (taiga-back 6.10.2).
+This Source Code Form is subject to the terms of the Mozilla Public
+License, v. 2.0. If a copy of the MPL was not distributed with this
+file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+Copyright (c) 2021-present Kaleidos INC
+Alteração da Vetor Sistemas: remove os links sociais do Taiga (Twitter, GitHub e site taiga.io).
+#}
+
+<!-- BEGIN FOOTER // -->
+<table border="0" cellpadding="0" cellspacing="0" class="footerContent"
+width="100%" id="templateFooter">
+    <tr>
+        <td valign="top">
+            {% block footer %}
+                {% trans unsubscribe_url=resolve_front_url("settings-mail-notifications"), support_url=sr("support.url"), support_email=sr("support.email") %}
+                <a href="{{ unsubscribe_url }}">Configure email notifications or unsubscribe</a>
+                &nbsp;&bull;&nbsp;
+                <a href="{{ support_url }}">Taiga Support</a>
+                &nbsp;&bull;&nbsp;
+                <a href="mailto:{{ support_email }}" >Contact us</a>
+                {% endtrans %}
+            {% endblock %}
+        </td>
+    </tr>
+</table>
+<!-- // END FOOTER -->

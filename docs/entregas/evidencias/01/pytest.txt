@@ -1,0 +1,5 @@
+# ./scripts/test-backend.sh --ds=vetor.tests.settings vetor/tests <mesma lista da SPEC-00> — 22/10/2026
+# taiga-back 6.10.2 + app vetor (ROOT_URLCONF=vetor.urls, LOCALE_PATHS da Vetor), Postgres 12.3 descartável
+321 passed, 3723 warnings in 336.57s (0:05:36)
+# = 315 testes oficiais (auth, permissões, anexos, OCC, memberships, roles, busca, hook GitHub, usuários
+#   e resources_permissions correspondentes, inclusive test_user_action_password_recovery) + 6 da Vetor.
