@@ -1,7 +1,16 @@
 # Sobreposição do compose oficial (upstream/taiga-docker): fixa versões e define padrões da Vetor Sistemas.
 # Caminhos relativos resolvem a partir de upstream/taiga-docker (diretório do primeiro arquivo -f).
+# Backend oficial + app Django da Vetor (vetor-back/). Montagem somente leitura não serve:
+# o entrypoint oficial faz chown -R em /taiga-back.
+x-vetor-back-image: &vetor-back-image
+  image: vetor/taiga-back:6.10.2-vetor
+  build:
+    context: ../..
+    dockerfile: vetor-back/Dockerfile
+
 x-vetor-back-environment: &vetor-back-environment
   LANGUAGE_CODE: "pt-br"
+  VETOR_SOURCE_URL: "${VETOR_SOURCE_URL}"
   CELERY_TIMEZONE: "America/Sao_Paulo"
   PUBLIC_REGISTER_ENABLED: "False"
   SESSION_COOKIE_SECURE: "${COOKIES_SECURE}"
@@ -11,16 +20,21 @@ services:
   taiga-db:
     image: postgres:12.3@sha256:a06e6e6e519b7a329c419f8221edec66cfc45511e8b80e262c12103ba745cf19
   taiga-back:
-    image: taigaio/taiga-back:6.10.2@sha256:4beed8f62c9ffbbcea824aa01c48fa72a2c2f713be6732e2ee37d2e777843f51
+    <<: *vetor-back-image
     environment: *vetor-back-environment
   taiga-async:
-    image: taigaio/taiga-back:6.10.2@sha256:4beed8f62c9ffbbcea824aa01c48fa72a2c2f713be6732e2ee37d2e777843f51
+    <<: *vetor-back-image
     environment: *vetor-back-environment
   taiga-front:
-    image: taigaio/taiga-front:6.10.3@sha256:570c8792ce802ff803a2275967e1d593cdd7c748e2d63163c4dab35fe2d2d646
+    # Front oficial com a marca aplicada no build (vetor-front/). O contexto é a raiz do repositório.
+    image: vetor/taiga-front:6.10.3-vetor
+    build:
+      context: ../..
+      dockerfile: vetor-front/Dockerfile
     environment:
       DEFAULT_LANGUAGE: "pt-br"
       PUBLIC_REGISTER_ENABLED: "false"
+      VETOR_SOURCE_URL: "${VETOR_SOURCE_URL}"
   taiga-events:
     image: taigaio/taiga-events:6.10.0@sha256:92fc0822564f891700d74d23fa44951adf2845cf50c9e56bfd0ef29abdc1ab40
   taiga-protected:
@@ -34,4 +48,5 @@ services:
     ports: !override
       - "${VETOR_HTTP_PORT}:80"
   taiga-manage:
-    image: taigaio/taiga-back:6.10.2@sha256:4beed8f62c9ffbbcea824aa01c48fa72a2c2f713be6732e2ee37d2e777843f51
+    <<: *vetor-back-image
+    environment: *vetor-back-environment

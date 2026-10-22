@@ -1,0 +1,196 @@
+# Traduções da Vetor Sistemas que têm prioridade sobre as do Taiga (LOCALE_PATHS).
+# msgid copiado do taiga-back 6.10.2; o teste test_locale confere que todos ainda existem no upstream.
+# Compilar: ./scripts/vetor.sh i18n. Plural-Forms precisa ser idêntico ao do Taiga, ou o Django 3.2
+# guarda este catálogo separado e o do Taiga vence.
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: pt_BR\n"
+"Plural-Forms: nplurals=2; plural=n > 1;\n"
+
+msgid "Taiga"
+msgstr "Vetor Sistemas"
+
+msgid "You have been Taigatized"
+msgstr "Bem-vindo à Vetor Sistemas"
+
+msgid "You've been Taigatized!"
+msgstr "Bem-vindo à Vetor Sistemas!"
+
+msgid "[Taiga] Updates"
+msgstr "[Vetor Sistemas] Atualizações"
+
+#, python-format
+msgid "[Taiga] %(error_subject)s"
+msgstr "[Vetor Sistemas] %(error_subject)s"
+
+msgid "[Taiga] Change email"
+msgstr "[Vetor Sistemas] Troca de e-mail"
+
+msgid "[Taiga] Password recovery"
+msgstr "[Vetor Sistemas] Recuperação de acesso"
+
+msgid "[Taiga] Verify email"
+msgstr "[Vetor Sistemas] Confirmação de e-mail"
+
+msgid "Accept your invitation to Taiga"
+msgstr "Aceitar o convite"
+
+msgid "Accept your invitation to Taiga following this link:"
+msgstr "Aceite o convite pelo link:"
+
+#, python-format
+msgid ""
+"\n"
+"[Taiga] Invitation to join to the project '%(project)s'\n"
+msgstr ""
+"\n"
+"[Vetor Sistemas] Convite para o projeto '%(project)s'\n"
+
+#, python-format
+msgid ""
+"\n"
+"[Taiga] Added to the project '%(project)s'\n"
+msgstr ""
+"\n"
+"[Vetor Sistemas] Você foi adicionado ao projeto '%(project)s'\n"
+
+#, python-format
+msgid ""
+"\n"
+"[Taiga] %(full_name)s has sent a message to the project %(project_name)s\n"
+msgstr ""
+"\n"
+"[Vetor Sistemas] %(full_name)s enviou uma mensagem ao projeto %(project_name)s\n"
+
+#, python-format
+msgid ""
+"\n"
+"[Taiga] Feedback from %(full_name)s <%(email)s>\n"
+msgstr ""
+"\n"
+"[Vetor Sistemas] Feedback de %(full_name)s <%(email)s>\n"
+
+#, python-format
+msgid ""
+"\n"
+"                <a href=\"%(unsubscribe_url)s\">Configure email notifications or unsubscribe</a>\n"
+"                &nbsp;&bull;&nbsp;\n"
+"                <a href=\"%(support_url)s\">Taiga Support</a>\n"
+"                &nbsp;&bull;&nbsp;\n"
+"                <a href=\"mailto:%(support_email)s\" >Contact us</a>\n"
+"                "
+msgstr ""
+"\n"
+"                <a href=\"%(unsubscribe_url)s\">Configurar ou cancelar notificações por e-mail</a>\n"
+"                &nbsp;&bull;&nbsp;\n"
+"                <a href=\"%(support_url)s\">Ajuda e código-fonte</a>\n"
+"                &nbsp;&bull;&nbsp;\n"
+"                <a href=\"mailto:%(support_email)s\" >Fale conosco</a>\n"
+"                "
+
+#, python-format
+msgid ""
+"\n"
+"    <h1>%(error_message)s</h1>\n"
+"    <p>Hello %(user)s,</p>\n"
+"    <p>Your project %(project)s has not been exported correctly.</p>\n"
+"    <p>The Taiga system administrators have been informed.<br/> Please, try it again or contact with the support team at\n"
+"       <a href=\"mailto:%(support_email)s\" title=\"Support email\" style=\"color: #83EEDE\">%(support_email)s</a></p>\n"
+"    <p><small>%(signature)s</small></p>\n"
+"    "
+msgstr ""
+"\n"
+"    <h1>%(error_message)s</h1>\n"
+"    <p>Olá, %(user)s,</p>\n"
+"    <p>Seu projeto %(project)s não foi exportado corretamente.</p>\n"
+"    <p>Os administradores do sistema foram informados.<br/> Tente novamente ou fale com o suporte em\n"
+"       <a href=\"mailto:%(support_email)s\" title=\"E-mail de suporte\" style=\"color: #087443\">%(support_email)s</a></p>\n"
+"    <p><small>%(signature)s</small></p>\n"
+"    "
+
+#, python-format
+msgid ""
+"\n"
+"Hello %(user)s,\n"
+"\n"
+"%(error_message)s\n"
+"Your project %(project)s has not been exported correctly.\n"
+"\n"
+"The Taiga system administrators have been informed.\n"
+"\n"
+"Please, try it again or contact with the support team at %(support_email)s\n"
+"\n"
+"---\n"
+"%(signature)s\n"
+msgstr ""
+"\n"
+"Olá, %(user)s,\n"
+"\n"
+"%(error_message)s\n"
+"Seu projeto %(project)s não foi exportado corretamente.\n"
+"\n"
+"Os administradores do sistema foram informados.\n"
+"\n"
+"Tente novamente ou fale com o suporte em %(support_email)s\n"
+"\n"
+"---\n"
+"%(signature)s\n"
+
+#, python-format
+msgid ""
+"\n"
+"    <h1>Feedback</h1>\n"
+"    <p>Taiga has received feedback from %(full_name)s <%(email)s></p>\n"
+"    "
+msgstr ""
+"\n"
+"    <h1>Feedback</h1>\n"
+"    <p>Feedback recebido de %(full_name)s <%(email)s></p>\n"
+"    "
+
+#, python-format
+msgid ""
+"\n"
+"        You are receiving this message because you are listed as administrator of the project titled %(project_name)s. If you don't want members of the Taiga community contacting your project, please <a href=\"%(project_settings_url)s\">update your project settings</a> to prevent such contacts. Regular communications amongst members of the project will not be affected.\n"
+"    "
+msgstr ""
+"\n"
+"        Você recebeu esta mensagem porque é administrador do projeto %(project_name)s. Para não receber contatos de pessoas de fora do projeto, <a href=\"%(project_settings_url)s\">ajuste as configurações do projeto</a>. A comunicação entre os membros do projeto não é afetada.\n"
+"    "
+
+#, python-format
+msgid ""
+"\n"
+"You are receiving this message because you are listed as administrator of the project titled %(project_name)s. If you don't want members of the Taiga community contacting your project, please update your project settings in %(project_settings_url)s to prevent such contacts. Regular communications amongst members of the project will not be affected.\n"
+msgstr ""
+"\n"
+"Você recebeu esta mensagem porque é administrador do projeto %(project_name)s. Para não receber contatos de pessoas de fora do projeto, ajuste as configurações do projeto em %(project_settings_url)s. A comunicação entre os membros do projeto não é afetada.\n"
+
+#, python-format
+msgid ""
+"\n"
+"    <h2>You have been invited to %(product_name)s!</h2>\n"
+"<p>Hi! %(full_name)s has sent you an invitation to join project <em>%(project)s</em> in %(product_name)s.</br> Taiga is an Open Source Agile Project Management Tool. There is no cost for you to be a Taiga user.</p>\n"
+"    "
+msgstr ""
+"\n"
+"    <h2>Você foi convidado para a %(product_name)s!</h2>\n"
+"<p>Olá! %(full_name)s convidou você para participar do projeto <em>%(project)s</em> na %(product_name)s, a central de clientes e projetos da equipe.</p>\n"
+"    "
+
+#, python-format
+msgid ""
+"\n"
+"You, or someone you know, has invited you to %(product_name)s\n"
+"\n"
+"Hi! %(full_name)s has sent you an invitation to join a project called %(project)s in %(product_name)s.\n"
+"Taiga is an Open Source Agile Project Management Tool. There is no cost for you to be a Taiga user.\n"
+"\n"
+msgstr ""
+"\n"
+"Você foi convidado para a %(product_name)s\n"
+"\n"
+"Olá! %(full_name)s convidou você para participar do projeto %(project)s na %(product_name)s, a central de clientes e projetos da equipe.\n"
+"\n"
+

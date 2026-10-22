@@ -1,0 +1,69 @@
+/* Vetor Sistemas — camada de marca sobre o tema oficial do Taiga (tokens em DESIGN.md). */
+:root {
+  --vt-brand: #00d47a; --vt-action: #087443; --vt-sidebar: #090d0b; --vt-canvas: #f5f7f6;
+  --vt-surface: #fff; --vt-text: #14221b; --vt-muted: #52645a; --vt-border: #dce5df;
+  --vt-danger: #b42318; --vt-warning: #8a5700; --vt-info: #175cd3;
+}
+body { background: var(--vt-canvas); color: var(--vt-text); }
+
+/* Barra superior escura com a logo original recortada por CSS (sem esticar). */
+.navbar { background-color: var(--vt-sidebar); }
+.navbar .nav-left .logo { display: flex; align-items: center; padding: 0 8px; background: #000; }
+.navbar a, .navbar button, .navbar .dropdown-project-list-projects span { color: #e8eeea; }
+.navbar svg, .navbar .icon { fill: #e8eeea; color: #e8eeea; }
+.navbar a:hover, .navbar a.active, .navbar .active > a { color: var(--vt-brand); }
+.navbar a:hover svg, .navbar a.active svg, .navbar .active svg { fill: var(--vt-brand); }
+.navbar .navbar-dropdown a, .navbar .navbar-dropdown span { color: var(--vt-text); }
+.navbar .navbar-dropdown svg { fill: var(--vt-text); }
+
+/* A logo é um JPEG 640x640 com a marca em x141-506, y255-345 (medido nos pixels):
+   a janela mostra só essa faixa, na proporção original. */
+.vetor-logo { display: block; position: relative; overflow: hidden; width: 160px; height: 48px; background: #000; }
+.vetor-logo img { position: absolute; width: 246px; height: 246px; max-width: none; left: -44px; top: -91px; }
+.vetor-auth-logo { margin: 0 auto 16px; width: 320px; max-width: 100%; }
+.vetor-auth-logo .vetor-logo { width: 320px; max-width: 100%; height: 96px; margin: 0 auto; border-radius: 12px; }
+.vetor-auth-logo .vetor-logo img { width: 520px; height: 520px; left: calc(50% - 263px); top: -196px; }
+
+/* Foco sempre visível (o tema oficial remove o outline em vários componentes). */
+:focus-visible { outline: 2px solid var(--vt-action) !important; outline-offset: 2px !important; }
+.navbar :focus-visible { outline-color: var(--vt-brand) !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}
+
+/* Card bloqueado: além da cor, rótulo em texto (DESIGN.md: nunca só cor). */
+.card-blocked { border-left: 4px solid var(--vt-danger); }
+.card-blocked::before { content: "Bloqueado"; display: inline-block; margin: 8px 12px 0; padding: 2px 8px;
+  border-radius: 4px; background: var(--vt-danger); color: #fff; font-size: 12px; font-weight: 600; }
+
+/* Menu lateral do projeto escuro, com texto claro. */
+tg-project-menu, tg-project-menu a, tg-project-menu button, tg-project-menu span { color: #e8eeea; }
+tg-project-menu svg { fill: #e8eeea; color: #e8eeea; }
+tg-project-menu a.active, tg-project-menu a:hover { color: var(--vt-brand); }
+tg-project-menu a.active svg, tg-project-menu a:hover svg { fill: var(--vt-brand); }
+
+/* Celular: cabeçalho compacto (todas as ações visíveis) e margem lateral nos formulários de acesso. */
+@media (max-width: 600px) {
+  .vetor-logo { width: 112px; height: 34px; }
+  .vetor-logo img { width: 172px; height: 172px; left: -31px; top: -64px; }
+  .navbar .nav-left .logo { padding: 0 6px; }
+  .navbar .dropdown-project-list-projects span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .auth-container { padding: 0 16px; box-sizing: border-box; }
+  .navbar .nav-right > * > a, .navbar .nav-right > a { padding-left: 8px !important; padding-right: 8px !important; }
+  .navbar .nav-right > :last-child, .navbar .nav-right > :last-child * { margin-left: 0 !important; padding-left: 4px !important; padding-right: 4px !important; }
+  /* Detalhe do card: a coluna lateral desce para baixo do conteúdo em vez de espremê-lo. */
+  .wrapper:has(> .main.detail) { flex-wrap: wrap; }
+  .wrapper > .main.detail { flex: 1 1 calc(100% - 48px); min-width: 0; }
+  .wrapper > .main.detail ~ * { flex: 1 1 100%; width: auto; max-width: none; margin-left: 48px; box-sizing: border-box; }
+}
+
+/* Bordas que identificam campos precisam de 3:1 (WCAG 1.4.11); divisores decorativos ficam no token border. */
+input:not([type=checkbox]):not([type=radio]), textarea, select { border-color: #7a8b81; }
+.navbar .dropdown-project-list-projects { background: transparent; }
+
+/* Telas de erro (404, sem permissão, bloqueado): fundo sólido da marca no lugar da foto do Taiga. */
+.error-main { background: var(--vt-sidebar) !important; }
+.error-main a { color: var(--vt-brand); }
+.error-main .vetor-logo { margin: 0 auto 16px; }

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Atalhos da instalação local. Uso: ./scripts/vetor.sh {init-env|up|down|manage ...|backup|restore <dir>|logs}
+# Atalhos da instalação local. Uso: ./scripts/vetor.sh {init-env|up|down|manage ...|i18n|backup|restore <dir>|logs}
 set -euo pipefail
 cd "$(dirname "$0")/.."
 DC=(docker compose --env-file .env -p vetor -f upstream/taiga-docker/docker-compose.yml
@@ -10,10 +10,15 @@ case "${1:-}" in
     [ -e .env ] && { echo ".env já existe; não sobrescrito." >&2; exit 1; }
     awk '{ while (sub(/CHANGE_ME/, r())) ; print } function r(  c) { c = "openssl rand -hex 32"; c | getline s; close(c); return s }' .env.example > .env
     chmod 600 .env; echo ".env criado com segredos aleatórios." ;;
-  up)      "${DC[@]}" up -d --scale taiga-manage=0 ;;
+  up)      "${DC[@]}" up -d --build --scale taiga-manage=0
+           "${DC[@]}" restart taiga-gateway ;;  # o nginx guarda o IP dos containers recriados
   down)    "${DC[@]}" down ;;
   logs)    "${DC[@]}" logs -f "${@:2}" ;;
   manage)  "${DC[@]}" run --rm taiga-manage "${@:2}" ;;
+  i18n)    # compila as traduções da Vetor (vetor-back/vetor/locale); a imagem oficial não traz msgfmt
+    CA=(); [ -n "${PIP_CERT:-}" ] && CA=(-v "$PIP_CERT:/ca.crt:ro" -e PIP_CERT=/ca.crt)
+    docker run --rm "${CA[@]}" -v "$PWD/vetor-back/vetor/locale:/l" --entrypoint sh taigaio/taiga-back:6.10.2 -c \
+      'pip install -q polib==1.2.0 && python -c "import glob, polib; [polib.pofile(f).save_as_mofile(f[:-3] + \".mo\") for f in glob.glob(\"/l/*/LC_MESSAGES/django.po\")]"' ;;
   backup)
     out="backups/$(date -u +%Y%m%dT%H%M%SZ)"; mkdir -p "$out"
     "${DC[@]}" exec -T taiga-db sh -c 'pg_dump -U "$POSTGRES_USER" -Fc taiga' > "$out/taiga.dump"
