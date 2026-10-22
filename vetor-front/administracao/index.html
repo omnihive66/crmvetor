@@ -5,50 +5,28 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Administração - Vetor Sistemas</title>
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="stylesheet" href="../ui/vetor-ui.css">
+<link rel="stylesheet" href="../ui/shell.css">
+<script src="../ui/shell.js" data-sprite="__SPRITE__"></script>
 <style>
-  :root { --brand:#00d47a; --action:#087443; --sidebar:#090d0b; --canvas:#f5f7f6; --surface:#fff; --text:#14221b;
-          --muted:#52645a; --border:#dce5df; --field:#7a8b81; --danger:#b42318; --info:#175cd3; }
-  * { box-sizing: border-box; }
-  body { margin:0; background:var(--canvas); color:var(--text); font:15px/1.5 Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
-  header { display:flex; align-items:center; gap:16px; height:48px; padding:0 16px 0 0; background:var(--sidebar); color:#e8eeea; }
-  header a { color:#e8eeea; }
-  .logo { display:block; position:relative; overflow:hidden; width:160px; height:48px; background:#000; flex:none; }
-  .logo img { position:absolute; width:246px; height:246px; left:-44px; top:-91px; }  /* mesmo recorte de vetor.css */
-  header h1 { font-size:16px; font-weight:600; margin:0; flex:1; }
-  main { max-width:1200px; margin:0 auto; padding:24px 16px 48px; }
-  h2 { font-size:24px; margin:32px 0 12px; } h2:first-child { margin-top:0; }
-  .card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:16px; }
-  .tabela { overflow-x:auto; }
-  table { width:100%; border-collapse:collapse; font-size:14px; }
-  caption { text-align:left; color:var(--muted); padding-bottom:8px; }
-  th, td { text-align:left; padding:8px; border-bottom:1px solid var(--border); vertical-align:middle; }
-  th { font-size:13px; color:var(--muted); font-weight:600; }
-  input[type=text], input[type=email], select { font:inherit; padding:6px 8px; border:1px solid var(--field); border-radius:8px; background:#fff; color:var(--text); }
-  button { font:inherit; padding:6px 14px; border-radius:8px; border:1px solid var(--action); background:var(--action); color:#fff; cursor:pointer; }
-  button.sec { background:#fff; color:var(--action); }
-  button:disabled { opacity:.55; cursor:not-allowed; }
-  :focus-visible { outline:2px solid var(--action); outline-offset:2px; }
-  header :focus-visible { outline-color:var(--brand); }
-  .estado { padding:24px; text-align:center; }
-  .erro { color:var(--danger); } .ok { color:var(--action); } .muted { color:var(--muted); font-size:13px; }
+  /* Específico desta tela; o resto vem de ui/vetor-ui.css. */
+  h2 { font-size: 24px; margin: 32px 0 12px; } main > h2:first-of-type { margin-top: 0; }
   .form { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; align-items:end; }
   .form label { display:flex; flex-direction:column; gap:4px; font-size:13px; color:var(--muted); }
   .form label.check { flex-direction:row; align-items:center; gap:8px; color:var(--text); font-size:14px; }
-  .pager { display:flex; gap:8px; align-items:center; justify-content:flex-end; margin-top:12px; }
+  caption { text-align:left; color:var(--muted); padding-bottom:8px; }
+  td select, td input { width:auto; }
+  .muted { color:var(--muted); font-size:13px; }
   .tag { display:inline-block; padding:1px 8px; border-radius:999px; border:1px solid var(--border); font-size:12px; }
   .detalhes { font-family:ui-monospace, monospace; font-size:12px; color:var(--muted); max-width:420px; word-break:break-word; }
-  @media (prefers-reduced-motion: reduce) { * { transition:none !important; animation:none !important; } }
 </style>
 </head>
 <body>
-<header>
-  <a class="logo" href="../../" title="Voltar ao início"><img src="../logo-vetor-original.jpg" alt="Vetor Sistemas" width="640" height="640"></a>
-  <h1>Administração</h1>
-  <a href="../../">Voltar ao início</a>
-</header>
+<div class="vt-topo"><nav aria-label="Você está em"><a href="../../">Visão geral</a> › Administração</nav></div>
 <main id="conteudo"><div class="card estado" role="status">Carregando…</div></main>
 
 <template id="tpl-painel">
+  <h1 style="margin-bottom:16px">Administração</h1>
   <h2>Pessoas</h2>
   <div class="card">
     <form id="nova" class="form" novalidate>

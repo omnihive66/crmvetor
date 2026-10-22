@@ -1,6 +1,6 @@
 # 0005 — Barra lateral global e busca global ficam para quando houver o que navegar
 
-- Data: 22/10/2026 • Estado: proposta, a validar com a gestão
+- Data: 22/10/2026 • Estado: implementada na SPEC-03 (ver abaixo)
 
 ## Contexto
 O DESIGN.md pede barra lateral de 248 px com Visão geral, Clientes, Projetos, Minhas demandas, Operação, Custos e Administração, e busca global. Hoje só existem as telas nativas do Taiga: início, projetos e o menu lateral de cada projeto (escuro, recolhível, 200 px, que no celular já começa recolhido). Clientes, Minhas demandas, Operação e Custos ainda não existem (SPEC-03, 05, 07/08 e 09). A busca nativa é por projeto e já respeita permissões (testes `test_search_resources` e verificação manual: usuário sem acesso recebe `count: 0`).
@@ -11,3 +11,8 @@ Não criar agora uma barra lateral com itens que levariam a telas inexistentes n
 ## Consequências
 - Até lá a navegação global é a barra superior nativa (Projetos, notificações, usuário) e o menu do projeto.
 - O critério visual "sidebar de 248 px" fica parcialmente atendido (menu do projeto escuro e recolhível de 200 px).
+
+## Implementação (SPEC-03)
+- Barra lateral global em `vetor-front/ui/shell.js` + `shell.css`, a mesma no app do Taiga (injetada no `index.html` pelo build) e nas telas próprias. Tem 248 px, recolhe para 64 px (preferência salva no navegador) e vira gaveta no celular (Esc fecha, o foco vai para a busca). Itens: Visão geral, Clientes, Projetos e Administração (só para administradores). Minhas demandas, Operação e Custos entram com as SPECs 05, 07/08 e 09.
+- A busca global fica no topo da barra lateral (não na barra superior do Taiga, que é do app AngularJS). Endpoint `/api/v1/vetor/busca`: clientes, documentos, projetos e histórias filtrados no servidor, sem contagens totais.
+- Links da barra para telas fora do app usam `target="_self"`, senão o roteador do AngularJS os captura e mostra 404.

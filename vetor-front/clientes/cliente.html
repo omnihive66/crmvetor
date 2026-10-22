@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cliente - Vetor Sistemas</title>
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="stylesheet" href="../ui/vetor-ui.css">
+<link rel="stylesheet" href="../ui/shell.css">
+<script src="../ui/shell.js" data-sprite="__SPRITE__"></script>
+</head>
+<body>
+<div class="vt-topo"><nav aria-label="Você está em"><a href="../../">Visão geral</a> › <a href="./">Clientes</a> › <span id="trilha">Cliente</span></nav></div>
+<main id="conteudo"><div class="card estado" role="status">Carregando…</div></main>
+
+<script>
+"use strict";
+const { el, chamar } = Vetor;
+const params = new URLSearchParams(location.search);
+const ID = Number(params.get("id"));
+const ABAS = [["resumo", "Resumo"], ["projetos", "Projetos"], ["contatos", "Contatos"], ["documentos", "Documentos"], ["reunioes", "Reuniões"], ["historico", "Histórico"]];
+const ACOES = {
+  "cliente.criado": "Cliente cadastrado", "cliente.alterado": "Dados alterados", "cliente.arquivado": "Cliente arquivado", "cliente.reativado": "Cliente reativado",
+  "cliente.projeto_vinculado": "Projeto vinculado", "cliente.projeto_desvinculado": "Projeto desvinculado",
+  "contato.criado": "Contato adicionado", "contato.alterado": "Contato alterado", "contato.removido": "Contato removido",
+  "documento.adicionado": "Documento adicionado", "documento.removido": "Documento removido", "documento.copiado_como_modelo": "Documento copiado como modelo",
+  "reuniao.registrada": "Reunião registrada", "reuniao.alterada": "Reunião alterada", "reuniao.removida": "Reunião removida", "reuniao.demanda_criada": "Demanda criada a partir de reunião",
+};
+let cliente, opcoes;
+const main = document.getElementById("conteudo");
+
+const editar = () => cliente.pode_editar;
+const tamanho = b => b > 1048576 ? (b / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(b / 1024)) + " KB";
+const nomeCiclo = c => (opcoes.ciclos.find(x => x.id === c) || {}).nome || c;
+const msgErro = (alvo, e) => { alvo.className = "erro"; alvo.textContent = e.message; };
+const vazio = texto => el("p", { class: "estado", text: texto });
+function falha(e, tentar) {
+  main.replaceChildren(el("div", { class: "card estado", role: "alert" },
+    el("p", { class: "erro", text: e.status === 404 ? "Cliente não encontrado ou fora do seu acesso." : e.status === 401 ? "Sua sessão expirou." : "Não foi possível carregar: " + e.message }),
+    e.status === 401 ? el("a", { href: "../../login", text: "Entrar novamente" }) : e.status === 404 ? el("a", { href: "./", text: "Voltar para Clientes" }) : el("button", { type: "button", class: "sec", text: "Tentar novamente", onclick: tentar })));
+}
+function campo(rotulo, nome, valor, attrs = {}) {
+  return el("label", attrs.largo ? { class: "largo" } : {}, rotulo,
+    attrs.tag === "textarea" ? el("textarea", { name: nome, maxlength: attrs.max }, valor || "")
+      : el("input", { type: attrs.tipo || "text", name: nome, value: valor || "", maxlength: attrs.max, required: attrs.obrigatorio }));
+}
+function confirmar(mensagem) { return window.confirm(mensagem); }
+
+// Cabeçalho e abas -------------------------------------------------------------------------
+function desenhar() {
+  document.title = `${cliente.nome} - Vetor Sistemas`;
+  document.getElementById("trilha").textContent = cliente.nome;
+  const aba = ABAS.some(a => a[0] === params.get("aba")) ? params.get("aba") : "resumo";
+  const cab = el("div", { class: "vt-cabecalho" },
+    el("div", {}, el("h1", { text: cliente.nome }),
+      el("p", { class: "vt-meta" }, `Responsável: ${cliente.responsavel_nome || "—"} · `, el("span", { class: `chip ciclo-${cliente.ciclo}`, text: nomeCiclo(cliente.ciclo) }),
+        cliente.arquivado ? el("span", { class: "chip", text: " Arquivado" }) : null)),
+    editar() ? el("div", { class: "acoes", style: "margin:0" },
+      el("button", { type: "button", class: "sec", text: cliente.arquivado ? "Reativar" : "Arquivar", onclick: arquivar }),
+      el("button", { type: "button", class: "perigo", text: "Excluir", onclick: excluir })) : null);
+  const abas = el("div", { class: "abas", role: "tablist", "aria-label": "Seções do cliente" });
+  const painel = el("section", { class: "card", role: "tabpanel", id: "painel", tabindex: "-1" });
+  ABAS.forEach(([id, nome]) => abas.append(el("button", { type: "button", role: "tab", id: `aba-${id}`, "aria-controls": "painel",
+    "aria-selected": String(id === aba), tabindex: id === aba ? "0" : "-1", text: nome, onclick: () => trocar(id) })));
+  abas.addEventListener("keydown", e => {  // setas entre abas (padrão WAI-ARIA)
+    const i = ABAS.findIndex(a => a[0] === (params.get("aba") || "resumo")), d = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
+    if (d) { const prox = ABAS[(i + d + ABAS.length) % ABAS.length][0]; trocar(prox); document.getElementById(`aba-${prox}`).focus(); }
+  });
+  main.replaceChildren(cab, abas, painel);
+  painel.setAttribute("aria-labelledby", `aba-${aba}`);
+  ({ resumo, projetos, contatos, documentos, reunioes, historico })[aba](painel);
+}
+function trocar(id) { params.set("aba", id); history.replaceState(null, "", `?${params}`); desenhar(); }
+
+async function arquivar() {
+  const texto = cliente.arquivado ? "Reativar o cliente? Ele volta para a lista principal." : "Arquivar o cliente? Ele sai da lista principal (filtro Arquivados), mas nada é apagado e dá para reativar.";
+  if (!confirmar(texto)) return;
+  try { cliente = (await chamar(`/vetor/clientes/${ID}`, { method: "PATCH", body: JSON.stringify({ arquivado: !cliente.arquivado }) })).corpo; desenhar(); }
+  catch (e) { alert(e.message); }
+}
+async function excluir() {
+  if (!confirmar(`Excluir “${cliente.nome}” para sempre? Contatos, documentos (inclusive os arquivos) e reuniões dele também serão apagados. Clientes com projetos não podem ser excluídos: arquive em vez disso.`)) return;
+  try { await chamar(`/vetor/clientes/${ID}`, { method: "DELETE" }); location.href = "./"; }
+  catch (e) { alert(e.message); }
+}
+
+// Resumo -----------------------------------------------------------------------------------
+async function resumo(p) {
+  const fin = opcoes.sistema_financeiro;
+  const dl = el("dl", { class: "campos" });
+  const item = (t, v) => dl.append(el("div", {}, el("dt", { class: "vt-meta", text: t }), el("dd", { style: "margin:0", text: v || "—" })));
+  item("Razão social", cliente.razao_social);
+  item("CNPJ", cliente.cnpj ? cliente.cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5") : cliente.estrangeiro ? `Estrangeiro${cliente.documento_estrangeiro ? " · " + cliente.documento_estrangeiro : ""}` : "Não informado (prospect)");
+  item("Localização", [cliente.cidade, cliente.uf, cliente.pais].filter(Boolean).join(" / "));
+  item(`Código no ${fin.nome || "sistema financeiro"}`, cliente.codigo_financeiro);
+  const ultima = el("div", { class: "vt-meta", text: "Carregando reuniões…" });
+  p.replaceChildren(el("h2", { text: "Resumo" }), dl,
+    cliente.observacoes ? el("p", { class: "pre", text: cliente.observacoes }) : null,
+    el("p", { class: "vt-meta", text: `Dados contratuais e financeiros ficam no ${fin.nome || "sistema financeiro (a configurar)"}, não aqui.` },
+      fin.url && cliente.codigo_financeiro ? el("a", { href: fin.url.replace("{codigo}", encodeURIComponent(cliente.codigo_financeiro)), target: "_blank", rel: "noopener", text: " Abrir no sistema financeiro" }) : null),
+    el("h2", { text: "Última reunião" }), ultima,
+    editar() ? el("div", { class: "acoes" }, el("button", { type: "button", class: "sec", text: "Editar dados", onclick: () => formResumo(p) })) : null);
+  try {
+    const r = (await chamar(`/vetor/reunioes?cliente=${ID}&page_size=1`)).corpo[0];
+    ultima.replaceChildren(r ? el("span", {}, `${Vetor.quando.format(new Date(r.data))} · `, el("a", { href: `?id=${ID}&aba=reunioes#reuniao-${r.id}`, text: "abrir ata" }),
+      r.proximos_passos ? el("span", { class: "pre", text: ` · Próximos passos: ${r.proximos_passos}` }) : null) : "Nenhuma reunião registrada.");
+  } catch (e) { ultima.textContent = "Não foi possível carregar as reuniões."; }
+}
+function formResumo(p) {
+  const f = el("form", { novalidate: true }, el("h2", { text: "Editar dados" }), el("div", { class: "campos" },
+    campo("Nome *", "nome", cliente.nome, { obrigatorio: true, max: 200 }), campo("Razão social", "razao_social", cliente.razao_social, { max: 255 }),
+    campo("CNPJ", "cnpj", cliente.cnpj, { max: 18 }), el("label", { class: "check" }, el("input", { type: "checkbox", name: "estrangeiro", checked: cliente.estrangeiro }), "Estrangeiro"),
+    campo("Documento estrangeiro", "documento_estrangeiro", cliente.documento_estrangeiro, { max: 60 }),
+    campo("Cidade", "cidade", cliente.cidade, { max: 120 }), campo("UF", "uf", cliente.uf, { max: 2 }), campo("País", "pais", cliente.pais, { max: 60 }),
+    el("label", {}, "Responsável", el("select", { name: "responsavel" }, el("option", { value: "", text: "—" }), ...opcoes.pessoas.map(x => el("option", { value: x.id, text: x.nome })))),
+    el("label", {}, "Ciclo", el("select", { name: "ciclo" }, ...opcoes.ciclos.map(c => el("option", { value: c.id, text: c.nome })))),
+    campo(`Código no ${opcoes.sistema_financeiro.nome || "sistema financeiro"}`, "codigo_financeiro", cliente.codigo_financeiro, { max: 60 }),
+    campo("Observações", "observacoes", cliente.observacoes, { tag: "textarea", largo: true, max: 10000 })));
+  const msg = el("p", { role: "alert" });
+  f.append(msg, el("div", { class: "acoes" }, el("button", { type: "submit", text: "Salvar" }), el("button", { type: "button", class: "sec", text: "Cancelar", onclick: desenhar })));
+  f.responsavel.value = cliente.responsavel || ""; f.ciclo.value = cliente.ciclo;
+  f.onsubmit = async ev => {
+    ev.preventDefault();
+    const d = Object.fromEntries(["nome", "razao_social", "cnpj", "documento_estrangeiro", "cidade", "uf", "pais", "ciclo", "codigo_financeiro", "observacoes"].map(k => [k, f[k].value]));
+    d.estrangeiro = f.estrangeiro.checked; d.responsavel = f.responsavel.value ? Number(f.responsavel.value) : null;
+    try { cliente = (await chamar(`/vetor/clientes/${ID}`, { method: "PATCH", body: JSON.stringify(d) })).corpo; desenhar(); } catch (e) { msgErro(msg, e); }
+  };
+  p.replaceChildren(f); f.nome.focus();
+}
+
+// Projetos ---------------------------------------------------------------------------------
+function projetos(p) {
+  const lista = cliente.projetos.length ? el("ul", { class: "lista-simples" }, ...cliente.projetos.map(pr => el("li", {},
+    el("a", { href: `../../project/${pr.slug}/`, text: pr.nome }),
+    editar() && opcoes.projetos_administrados.some(a => a.id === pr.id) ? el("button", { type: "button", class: "sec", style: "margin-left:12px", text: "Desvincular",
+      onclick: async () => { if (!confirmar(`Desvincular “${pr.nome}” deste cliente? O projeto continua existindo.`)) return;
+        try { cliente = (await chamar(`/vetor/clientes/${ID}/desvincular_projeto`, { method: "POST", body: JSON.stringify({ projeto: pr.id }) })).corpo; desenhar(); } catch (e) { alert(e.message); } } }) : null)))
+    : vazio("Nenhum projeto deste cliente visível para você.");
+  const livres = opcoes.projetos_administrados.filter(a => !a.cliente);
+  const msg = el("p", { role: "alert" });
+  const form = editar() && livres.length ? el("form", { class: "acoes" }, el("label", { class: "campo" }, "Vincular projeto que você administra",
+    el("select", { name: "projeto" }, ...livres.map(a => el("option", { value: a.id, text: a.nome })))), el("button", { type: "submit", text: "Vincular" })) : null;
+  if (form) form.onsubmit = async ev => { ev.preventDefault();
+    try { cliente = (await chamar(`/vetor/clientes/${ID}/vincular_projeto`, { method: "POST", body: JSON.stringify({ projeto: Number(form.projeto.value) }) })).corpo; opcoes = (await chamar("/vetor/clientes/opcoes")).corpo; desenhar(); } catch (e) { msgErro(msg, e); } };
+  p.replaceChildren(el("h2", { text: "Projetos" }), lista, form, msg,
+    el("p", { class: "vt-meta", text: "Projetos internos não precisam de cliente. Só aparecem aqui os projetos que você consegue abrir." }));
+}
+
+// Contatos ---------------------------------------------------------------------------------
+async function contatos(p) {
+  p.replaceChildren(el("h2", { text: "Contatos" }), el("p", { class: "vt-meta", role: "status", text: "Carregando…" }));
+  let lista;
+  try { lista = (await chamar(`/vetor/contatos?cliente=${ID}&page_size=200`)).corpo; } catch (e) { p.append(el("p", { class: "erro", text: e.message })); return; }
+  const msg = el("p", { role: "alert" });
+  const linhas = lista.map(c => el("tr", {}, el("td", { text: c.nome }), el("td", { text: c.funcao || "—" }),
+    el("td", {}, c.telefone ? el("a", { href: `tel:${c.telefone}`, text: c.telefone }) : "—"),
+    el("td", {}, c.email ? el("a", { href: `mailto:${c.email}`, text: c.email }) : "—"),
+    el("td", {}, editar() ? el("button", { type: "button", class: "perigo", text: "Remover", "aria-label": `Remover contato ${c.nome}`,
+      onclick: async () => { if (!confirmar(`Remover o contato ${c.nome}?`)) return; try { await chamar(`/vetor/contatos/${c.id}`, { method: "DELETE" }); contatos(p); } catch (e) { msgErro(msg, e); } } }) : null)));
+  const tab = lista.length ? el("div", { class: "tabela" }, el("table", {}, el("thead", {}, el("tr", {}, ...["Nome", "Função", "Telefone", "E-mail", ""].map(t => el("th", { scope: "col", text: t })))), el("tbody", {}, ...linhas)))
+    : vazio("Nenhum contato cadastrado.");
+  let form = null;
+  if (editar()) {
+    form = el("form", { novalidate: true }, el("h2", { text: "Novo contato" }), el("div", { class: "campos" },
+      campo("Nome *", "nome", "", { obrigatorio: true, max: 200 }), campo("Função", "funcao", "", { max: 120 }),
+      campo("Telefone", "telefone", "", { tipo: "tel", max: 40 }), campo("E-mail", "email", "", { tipo: "email", max: 254 })),
+      el("div", { class: "acoes" }, el("button", { type: "submit", text: "Adicionar contato" })));
+    form.onsubmit = async ev => { ev.preventDefault();
+      const d = Object.fromEntries(["nome", "funcao", "telefone", "email"].map(k => [k, form[k].value])); d.cliente = ID;
+      try { await chamar("/vetor/contatos", { method: "POST", body: JSON.stringify(d) }); contatos(p); } catch (e) { msgErro(msg, e); } };
+  }
+  p.replaceChildren(el("h2", { text: "Contatos" }), tab, msg, form);
+}
+
+// Documentos -------------------------------------------------------------------------------
+async function documentos(p) {
+  p.replaceChildren(el("h2", { text: "Documentos" }), el("p", { class: "vt-meta", role: "status", text: "Carregando…" }));
+  let lista;
+  try { lista = (await chamar(`/vetor/documentos?cliente=${ID}&page_size=200`)).corpo; } catch (e) { p.append(el("p", { class: "erro", text: e.message })); return; }
+  const msg = el("p", { role: "alert" });
+  const cat = c => (opcoes.categorias.find(x => x.id === c) || {}).nome || c;
+  const proj = id => (cliente.projetos.find(x => x.id === id) || {}).nome;
+  const itens = lista.map(d => el("li", {},
+    el("strong", { text: d.titulo }), ` · ${cat(d.categoria)} · versão ${d.versao}`, d.projeto ? ` · projeto ${proj(d.projeto) || "#" + d.projeto}` : "",
+    el("div", { class: "vt-meta", text: `${d.autor_nome || "—"} em ${Vetor.quando.format(new Date(d.criado_em))}${d.modelo_de ? " · cópia de modelo" : ""}` }),
+    el("div", { class: "acoes", style: "margin-top:6px" },
+      d.url ? el("button", { type: "button", class: "sec", text: `Baixar (${tamanho(d.tamanho)})`, "aria-label": `Baixar ${d.titulo}`,
+        onclick: async () => { try { location.href = (await chamar(`/vetor/documentos/${d.id}`)).corpo.url; } catch (e) { msgErro(msg, e); } } })  // link novo: o token expira
+        : el("a", { class: "botao sec", href: d.url_externa, target: "_blank", rel: "noopener noreferrer", text: `Abrir em ${d.origem_externa} ↗` }),
+      editar() ? el("button", { type: "button", class: "sec", text: "Usar como modelo em outro cliente", onclick: () => copiar(d) }) : null,
+      editar() ? el("button", { type: "button", class: "perigo", text: "Remover", onclick: async () => {
+        if (!confirmar(`Remover “${d.titulo}”?${d.url ? " O arquivo será apagado do servidor." : ""}`)) return;
+        try { await chamar(`/vetor/documentos/${d.id}`, { method: "DELETE" }); documentos(p); } catch (e) { msgErro(msg, e); } } }) : null)));
+  let form = null;
+  if (editar()) {
+    form = el("form", { novalidate: true }, el("h2", { text: "Novo documento" }), el("div", { class: "campos" },
+      campo("Título *", "titulo", "", { obrigatorio: true, max: 200 }),
+      el("label", {}, "Categoria", el("select", { name: "categoria" }, ...opcoes.categorias.map(c => el("option", { value: c.id, text: c.nome })))),
+      campo("Versão", "versao", "1", { max: 20 }),
+      el("label", {}, "Projeto (opcional)", el("select", { name: "projeto" }, el("option", { value: "", text: "Do cliente (todos os projetos)" }), ...cliente.projetos.map(x => el("option", { value: x.id, text: x.nome })))),
+      el("label", { class: "largo" }, "Arquivo", el("input", { type: "file", name: "arquivo" })),
+      campo("…ou link externo (https)", "url_externa", "", { tipo: "url", max: 500 }), campo("Origem do link (ex.: Google Drive)", "origem_externa", "", { max: 80 })),
+      el("p", { class: "vt-meta", text: "Arquivos ficam privados: o download usa um link temporário e só funciona para quem tem acesso ao cliente." }),
+      el("div", { class: "acoes" }, el("button", { type: "submit", text: "Adicionar documento" })));
+    form.onsubmit = async ev => { ev.preventDefault();
+      const fd = new FormData(); fd.append("cliente", ID);
+      for (const k of ["titulo", "categoria", "versao", "projeto", "url_externa", "origem_externa"]) if (form[k].value) fd.append(k, form[k].value);
+      if (form.arquivo.files[0]) fd.append("arquivo", form.arquivo.files[0]);
+      try { await chamar("/vetor/documentos", { method: "POST", body: fd }); documentos(p); } catch (e) { msgErro(msg, e); } };
+  }
+  p.replaceChildren(el("h2", { text: "Documentos" }), lista.length ? el("ul", { class: "lista-simples" }, ...itens) : vazio("Nenhum documento. Nenhuma etapa exige documento por padrão."), msg, form);
+}
+async function copiar(d) {
+  const destinos = (await chamar("/vetor/clientes?page_size=200")).corpo.filter(c => c.id !== ID && c.pode_editar);
+  const dlg = el("dialog", { "aria-labelledby": "copia-titulo" });
+  const f = el("form", { method: "dialog" }, el("h2", { id: "copia-titulo", text: "Usar como modelo em outro cliente" }),
+    el("p", { text: "Vai uma cópia do arquivo ou link para o cliente escolhido, como modelo. O projeto e a versão não vão junto. O conteúdo do arquivo não é alterado: revise e tire dados específicos deste cliente antes de usar." }),
+    destinos.length ? el("label", { class: "campo" }, "Cliente de destino", el("select", { name: "cliente" }, ...destinos.map(c => el("option", { value: c.id, text: c.nome })))) : el("p", { class: "erro", text: "Nenhum outro cliente que você possa editar." }),
+    el("p", { role: "alert", class: "erro" }),
+    el("div", { class: "acoes" }, destinos.length ? el("button", { type: "submit", text: "Copiar como modelo" }) : null, el("button", { type: "button", class: "sec", text: "Cancelar", onclick: () => dlg.close() })));
+  f.onsubmit = async ev => { ev.preventDefault();
+    try { await chamar(`/vetor/documentos/${d.id}/copiar_como_modelo`, { method: "POST", body: JSON.stringify({ cliente: Number(f.cliente.value), confirmar: true }) });
+      dlg.close(); alert("Cópia criada no cliente de destino (categoria Modelo)."); } catch (e) { f.querySelector("[role=alert]").textContent = e.message; } };
+  dlg.append(f); dlg.addEventListener("close", () => dlg.remove()); document.body.append(dlg); dlg.showModal();
+}
+
+// Reuniões ---------------------------------------------------------------------------------
+async function reunioes(p) {
+  p.replaceChildren(el("h2", { text: "Reuniões" }), el("p", { class: "vt-meta", role: "status", text: "Carregando…" }));
+  let lista;
+  try { lista = (await chamar(`/vetor/reunioes?cliente=${ID}&page_size=100`)).corpo; } catch (e) { p.append(el("p", { class: "erro", text: e.message })); return; }
+  const msg = el("p", { role: "alert" });
+  const itens = lista.map(r => {
+    const li = el("li", { id: `reuniao-${r.id}` }, el("strong", { text: Vetor.quando.format(new Date(r.data)) }),
+      el("div", { class: "vt-meta", text: `Participantes: ${[...r.participantes_internos.map(x => x.nome), ...r.participantes_externos.split("\n").filter(Boolean)].join(", ") || "—"} · registrada por ${r.autor_nome || "—"}` }),
+      r.notas ? el("p", { class: "pre", text: r.notas }) : null,
+      r.proximos_passos ? el("p", { class: "pre" }, el("strong", { text: "Próximos passos: " }), r.proximos_passos) : null,
+      r.demandas.length ? el("p", {}, "Demandas: ", ...r.demandas.flatMap((u, i) => [i ? ", " : "", el("a", { href: `../../project/${u.projeto}/us/${u.ref}`, text: `#${u.ref} ${u.assunto}` })])) : null);
+    const projetosDoCliente = cliente.projetos;
+    if (projetosDoCliente.length) {
+      const f = el("form", { class: "acoes" }, el("label", { class: "campo" }, "Projeto", el("select", { name: "projeto" }, ...projetosDoCliente.map(x => el("option", { value: x.id, text: x.nome })))),
+        el("label", { class: "campo", style: "flex:1;min-width:220px" }, "Demanda", el("input", { type: "text", name: "assunto", value: (r.proximos_passos || "").split("\n")[0].slice(0, 200), maxlength: 500 })),
+        el("button", { type: "submit", class: "sec", text: "Criar demanda a partir da ata" }));
+      f.onsubmit = async ev => { ev.preventDefault();
+        const botao = f.querySelector("button"); if (botao.disabled) return; botao.disabled = true;  // sem demanda duplicada por clique duplo
+        try { const { corpo } = await chamar(`/vetor/reunioes/${r.id}/criar_demanda`, { method: "POST", body: JSON.stringify({ projeto: Number(f.projeto.value), assunto: f.assunto.value,
+          descricao: `Criada a partir da reunião de ${Vetor.quando.format(new Date(r.data))}.\n\n${r.proximos_passos || ""}` }) });
+          reunioes(p); } catch (e) { botao.disabled = false; msgErro(msg, e); } };
+      li.append(f);
+    }
+    return li;
+  });
+  let form = null;
+  if (editar()) {
+    const agora = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    form = el("form", { novalidate: true }, el("h2", { text: "Registrar reunião" }), el("div", { class: "campos" },
+      el("label", {}, "Data e hora *", el("input", { type: "datetime-local", name: "data", value: agora, required: true })),
+      el("label", {}, "Participantes da equipe", el("select", { name: "internos", multiple: true, size: 4 }, ...opcoes.pessoas.map(x => el("option", { value: x.id, text: x.nome })))),
+      campo("Participantes do cliente (um por linha)", "participantes_externos", "", { tag: "textarea", max: 20000 }),
+      campo("Notas / ata", "notas", "", { tag: "textarea", largo: true, max: 20000 }),
+      campo("Próximos passos", "proximos_passos", "", { tag: "textarea", largo: true, max: 20000 })),
+      el("div", { class: "acoes" }, el("button", { type: "submit", text: "Registrar reunião" })));
+    form.onsubmit = async ev => { ev.preventDefault();
+      if (!form.data.value) return msgErro(msg, new Error("Informe data e hora."));
+      const d = { cliente: ID, data: new Date(form.data.value).toISOString(), participantes_internos: [...form.internos.selectedOptions].map(o => Number(o.value)),
+        participantes_externos: form.participantes_externos.value, notas: form.notas.value, proximos_passos: form.proximos_passos.value };
+      try { await chamar("/vetor/reunioes", { method: "POST", body: JSON.stringify(d) }); reunioes(p); } catch (e) { msgErro(msg, e); } };
+  }
+  p.replaceChildren(el("h2", { text: "Reuniões" }), lista.length ? el("ul", { class: "lista-simples" }, ...itens) : vazio("Nenhuma reunião registrada."), msg, form);
+  if (location.hash) { const alvo = document.querySelector(location.hash); if (alvo) alvo.scrollIntoView(); }
+}
+
+// Histórico --------------------------------------------------------------------------------
+async function historico(p) {
+  p.replaceChildren(el("h2", { text: "Histórico" }), el("p", { class: "vt-meta", role: "status", text: "Carregando…" }));
+  try {
+    const lista = (await chamar(`/vetor/clientes/${ID}/historico`)).corpo;
+    p.replaceChildren(el("h2", { text: "Histórico" }), lista.length ? el("ul", { class: "lista-simples" }, ...lista.map(h => el("li", {},
+      el("strong", { text: ACOES[h.acao] || h.acao }), h.titulo ? ` · ${h.titulo}` : "", h.campos ? el("span", { class: "vt-meta", text: ` · campos: ${h.campos.join(", ")}` }) : null,
+      el("div", { class: "vt-meta", text: `${h.ator_nome} · ${Vetor.quando.format(new Date(h.ocorrido_em))}` })))) : vazio("Sem alterações registradas."));
+  } catch (e) { p.append(el("p", { class: "erro", text: e.message })); }
+}
+
+async function iniciar() {
+  if (!Vetor.token()) return falha({ status: 401 }, iniciar);
+  if (!ID) return falha({ status: 404 }, iniciar);
+  try { [opcoes, cliente] = (await Promise.all([chamar("/vetor/clientes/opcoes"), chamar(`/vetor/clientes/${ID}`)])).map(r => r.corpo); desenhar(); }
+  catch (e) { falha(e, iniciar); }
+}
+iniciar();
+</script>
+</body>
+</html>

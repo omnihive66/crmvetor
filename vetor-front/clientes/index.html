@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clientes - Vetor Sistemas</title>
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="stylesheet" href="../ui/vetor-ui.css">
+<link rel="stylesheet" href="../ui/shell.css">
+<script src="../ui/shell.js" data-sprite="__SPRITE__"></script>
+</head>
+<body>
+<div class="vt-topo"><nav aria-label="Você está em"><a href="../../">Visão geral</a> › Clientes</nav></div>
+<main>
+  <div class="vt-cabecalho">
+    <div><h1>Clientes</h1><p class="vt-meta" id="resumo" aria-live="polite"></p></div>
+    <div class="acoes" style="margin:0">
+      <div role="group" aria-label="Modo de exibição">
+        <button type="button" class="sec" id="ver-cartoes" aria-pressed="true">Cartões</button>
+        <button type="button" class="sec" id="ver-tabela" aria-pressed="false">Tabela</button>
+      </div>
+      <button type="button" id="novo" hidden>Novo cliente</button>
+    </div>
+  </div>
+  <form class="filtros" id="filtros" role="search">
+    <label class="sr" for="f-q">Buscar por nome ou CNPJ</label>
+    <input type="search" id="f-q" name="q" placeholder="Buscar por nome ou CNPJ">
+    <label class="sr" for="f-resp">Responsável</label>
+    <select id="f-resp" name="responsavel"><option value="">Todos os responsáveis</option></select>
+    <label class="sr" for="f-ciclo">Ciclo</label>
+    <select id="f-ciclo" name="ciclo"><option value="">Todos os ciclos</option></select>
+    <label class="check"><input type="checkbox" name="arquivados" id="f-arq"> Arquivados</label>
+  </form>
+  <div id="lista"><div class="card estado" role="status">Carregando…</div></div>
+  <div class="pager" id="pager"></div>
+</main>
+
+<dialog id="dlg-novo" aria-labelledby="dlg-novo-titulo">
+  <form method="dialog" id="form-novo" novalidate>
+    <h2 id="dlg-novo-titulo">Novo cliente</h2>
+    <div class="campos">
+      <label class="largo">Nome *<input type="text" name="nome" required maxlength="200"></label>
+      <label>Razão social<input type="text" name="razao_social" maxlength="255"></label>
+      <label>CNPJ (opcional para prospect)<input type="text" name="cnpj" inputmode="numeric" maxlength="18"></label>
+      <label class="check"><input type="checkbox" name="estrangeiro"> Cliente estrangeiro (sem CNPJ)</label>
+      <label>Documento estrangeiro<input type="text" name="documento_estrangeiro" maxlength="60"></label>
+      <label>Cidade<input type="text" name="cidade" maxlength="120"></label>
+      <label>UF<input type="text" name="uf" maxlength="2"></label>
+      <label>Responsável<select name="responsavel"></select></label>
+      <label>Ciclo<select name="ciclo"></select></label>
+    </div>
+    <p id="novo-msg" role="alert" class="erro"></p>
+    <div class="acoes">
+      <button type="submit" value="salvar" id="novo-salvar">Cadastrar</button>
+      <button type="button" class="sec" id="novo-cancelar">Cancelar</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+"use strict";
+const { el, chamar } = Vetor;
+const CHAVE_FILTROS = "vetor-filtros-clientes";
+let opcoes, modo = "cartoes", pagina = 1, filtrosSalvos = false;
+
+const ciclos = () => Object.fromEntries(opcoes.ciclos.map(c => [c.id, c.nome]));
+const chipCiclo = c => el("span", { class: `chip ciclo-${c}`, text: ciclos()[c] || c });
+const link = c => `cliente.html?id=${c.id}`;
+
+// Filtros persistidos por usuário no userstorage do Taiga (servidor), não no navegador.
+async function lerFiltros() {
+  try { const { corpo } = await chamar(`/user-storage/${CHAVE_FILTROS}`); filtrosSalvos = true; return corpo.value || {}; }
+  catch (e) { return {}; }
+}
+let fila = Promise.resolve();
+function salvarFiltros(valor) {
+  // Em fila: dois POST simultâneos criariam a mesma chave. PATCH porque o PUT do Taiga exige a chave no corpo.
+  fila = fila.then(async () => {
+    const corpo = JSON.stringify(filtrosSalvos ? { value: valor } : { key: CHAVE_FILTROS, value: valor });
+    try { await chamar(filtrosSalvos ? `/user-storage/${CHAVE_FILTROS}` : "/user-storage", { method: filtrosSalvos ? "PATCH" : "POST", body: corpo }); filtrosSalvos = true; }
+    catch (e) { console.warn("Filtros não salvos:", e.message); }  // preferência: a lista continua funcionando
+  });
+  return fila;
+}
+function filtrosAtuais() {
+  const f = document.getElementById("filtros");
+  return { q: f.q.value.trim(), responsavel: f.responsavel.value, ciclo: f.ciclo.value, arquivados: f.arquivados.checked, modo };
+}
+
+function cartoes(lista) {
+  return el("div", { class: "grade" }, ...lista.map(c => el("a", { class: "card", href: link(c) },
+    el("h3", { text: c.nome }),
+    el("div", {}, chipCiclo(c.ciclo), c.arquivado ? el("span", { class: "chip", text: " Arquivado" }) : null),
+    el("span", { class: "vt-meta", text: `Responsável: ${c.responsavel_nome || "—"}` }),
+    el("span", { class: "vt-meta", text: [c.cidade, c.uf].filter(Boolean).join(" / ") || "Localização não informada" }),
+    el("span", { class: "vt-meta", text: `${c.projetos.length} projeto(s) visível(is)` }))));
+}
+function tabela(lista) {
+  return el("div", { class: "card tabela" }, el("table", {},
+    el("caption", { class: "sr", text: "Clientes" }),
+    el("thead", {}, el("tr", {}, ...["Nome", "CNPJ", "Ciclo", "Responsável", "Local", "Projetos"].map(t => el("th", { scope: "col", text: t })))),
+    el("tbody", {}, ...lista.map(c => el("tr", {},
+      el("td", {}, el("a", { href: link(c), text: c.nome })),
+      el("td", { text: c.cnpj ? c.cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5") : (c.estrangeiro ? "Estrangeiro" : "—") }),
+      el("td", {}, chipCiclo(c.ciclo)), el("td", { text: c.responsavel_nome || "—" }),
+      el("td", { text: [c.cidade, c.uf].filter(Boolean).join(" / ") || "—" }), el("td", { text: String(c.projetos.length) }))))));
+}
+
+async function carregar() {
+  const lista = document.getElementById("lista"), f = filtrosAtuais();
+  lista.replaceChildren(el("div", { class: "card estado", role: "status", text: "Carregando…" }));
+  const qs = new URLSearchParams({ page: pagina });
+  for (const k of ["q", "responsavel", "ciclo"]) if (f[k]) qs.set(k, f[k]);
+  if (f.arquivados) qs.set("arquivados", "true");
+  try {
+    const { corpo, total, proxima } = await chamar(`/vetor/clientes?${qs}`);
+    document.getElementById("resumo").textContent = `${total} cliente(s)${f.arquivados ? " arquivado(s)" : ""} no seu escopo`;
+    if (!corpo.length) {
+      const vazio = el("div", { class: "card estado" }, el("p", { text: f.q || f.responsavel || f.ciclo ? "Nenhum cliente com esses filtros." : "Nenhum cliente no seu escopo ainda." }));
+      if (f.q || f.responsavel || f.ciclo) vazio.append(el("button", { type: "button", class: "sec", text: "Limpar filtros", onclick: limpar }));
+      else if (opcoes.pode_criar) vazio.append(el("button", { type: "button", text: "Cadastrar o primeiro cliente", onclick: abrirNovo }));
+      lista.replaceChildren(vazio);
+    } else lista.replaceChildren(modo === "tabela" ? tabela(corpo) : cartoes(corpo));
+    const p = document.getElementById("pager");
+    p.replaceChildren(el("span", { class: "vt-meta", text: `Página ${pagina}` }),
+      el("button", { type: "button", class: "sec", text: "Anterior", disabled: pagina <= 1, onclick: () => { pagina--; carregar(); } }),
+      el("button", { type: "button", class: "sec", text: "Próxima", disabled: !proxima, onclick: () => { pagina++; carregar(); } }));
+  } catch (e) {
+    lista.replaceChildren(el("div", { class: "card estado", role: "alert" }, el("p", { class: "erro", text: e.status === 401 ? "Sua sessão expirou." : "Não foi possível carregar os clientes: " + e.message }),
+      e.status === 401 ? el("a", { href: "../../login", text: "Entrar novamente" }) : el("button", { type: "button", class: "sec", text: "Tentar novamente", onclick: carregar })));
+  }
+}
+
+function mudarModo(novo) {
+  modo = novo;
+  document.getElementById("ver-cartoes").setAttribute("aria-pressed", String(modo === "cartoes"));
+  document.getElementById("ver-tabela").setAttribute("aria-pressed", String(modo === "tabela"));
+}
+let espera;
+function aoFiltrar() { pagina = 1; clearTimeout(espera); espera = setTimeout(() => { salvarFiltros(filtrosAtuais()); carregar(); }, 300); }
+function limpar() { const f = document.getElementById("filtros"); f.reset(); aoFiltrar(); }
+
+function abrirNovo() {
+  const d = document.getElementById("dlg-novo"), f = document.getElementById("form-novo");
+  f.reset(); delete f.dataset.confirmar; document.getElementById("novo-msg").textContent = "";
+  document.getElementById("novo-salvar").textContent = "Cadastrar";
+  f.responsavel.value = ""; d.showModal(); f.nome.focus();
+}
+async function salvarNovo(ev) {
+  ev.preventDefault();
+  const f = ev.target, msg = document.getElementById("novo-msg");
+  const dados = Object.fromEntries(["nome", "razao_social", "cnpj", "documento_estrangeiro", "cidade", "uf", "responsavel", "ciclo"].map(k => [k, f[k].value]));
+  dados.estrangeiro = f.estrangeiro.checked; dados.responsavel = dados.responsavel ? Number(dados.responsavel) : undefined;
+  if (f.dataset.confirmar) dados.confirmar_duplicado = true;
+  msg.textContent = "";
+  try {
+    const { corpo } = await chamar("/vetor/clientes", { method: "POST", body: JSON.stringify(dados) });
+    location.href = link(corpo);
+  } catch (e) {
+    if (e.corpo && e.corpo.duplicado_possivel) {
+      f.dataset.confirmar = "1"; document.getElementById("novo-salvar").textContent = "Cadastrar mesmo assim";
+      msg.textContent = e.corpo.duplicado_possivel[0];
+    } else msg.textContent = e.message;
+  }
+}
+
+async function iniciar() {
+  if (!Vetor.token()) { document.getElementById("lista").replaceChildren(el("div", { class: "card estado" }, el("p", { text: "Entre no sistema para ver os clientes." }), el("a", { href: "../../login", text: "Ir para o login" }))); return; }
+  try { opcoes = (await chamar("/vetor/clientes/opcoes")).corpo; }
+  catch (e) { document.getElementById("lista").replaceChildren(el("div", { class: "card estado", role: "alert" }, el("p", { class: "erro", text: "Não foi possível carregar: " + e.message }), el("button", { type: "button", class: "sec", text: "Tentar novamente", onclick: iniciar }))); return; }
+  const f = document.getElementById("filtros"), fn = document.getElementById("form-novo");
+  for (const p of opcoes.pessoas) { f.responsavel.append(el("option", { value: p.id, text: p.nome })); fn.responsavel.append(el("option", { value: p.id, text: p.nome })); }
+  fn.responsavel.prepend(el("option", { value: "", text: "Eu" }));
+  for (const c of opcoes.ciclos) { f.ciclo.append(el("option", { value: c.id, text: c.nome })); fn.ciclo.append(el("option", { value: c.id, text: c.nome })); }
+  const salvos = await lerFiltros();
+  f.q.value = salvos.q || ""; f.responsavel.value = salvos.responsavel || ""; f.ciclo.value = salvos.ciclo || ""; f.arquivados.checked = !!salvos.arquivados;
+  mudarModo(salvos.modo === "tabela" ? "tabela" : "cartoes");
+  document.getElementById("novo").hidden = !opcoes.pode_criar;
+  f.addEventListener("input", aoFiltrar); f.addEventListener("change", aoFiltrar); f.addEventListener("submit", e => e.preventDefault());
+  document.getElementById("ver-cartoes").onclick = () => { mudarModo("cartoes"); salvarFiltros(filtrosAtuais()); carregar(); };
+  document.getElementById("ver-tabela").onclick = () => { mudarModo("tabela"); salvarFiltros(filtrosAtuais()); carregar(); };
+  document.getElementById("novo").onclick = abrirNovo;
+  document.getElementById("novo-cancelar").onclick = () => document.getElementById("dlg-novo").close();
+  fn.addEventListener("submit", salvarNovo);
+  carregar();
+}
+iniciar();
+</script>
+</body>
+</html>

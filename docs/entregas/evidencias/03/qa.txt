@@ -1,0 +1,7 @@
+1440: rolagem horizontal clientes(tabela)=0px cliente=0px | título: Kanban - [FICTÍCIO] Portal do Cliente
+1024: rolagem horizontal clientes(tabela)=0px cliente=0px | título: Kanban - [FICTÍCIO] Portal do Cliente
+390: foco ao abrir a gaveta = Busca global
+390: Esc fecha a gaveta = true
+390: rolagem horizontal clientes(tabela)=0px cliente=0px | título: Clientes - Vetor Sistemas
+observador: botões de edição = 0 | Novo cliente visível = false
+erros de JavaScript: nenhum

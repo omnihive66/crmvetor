@@ -77,10 +77,6 @@ tpl = sub(tpl, r'<img src="v-[^"]*/svg/logo\.svg" alt="TAIGA" width="143px">' + 
 tpl = sub(tpl, r'<img (?:ng-)?src="v-[^"]*/svg/logo\.svg" alt="TAIGA"[^>]*>', LOGO, 2, "logo das telas de aviso")
 tpl = sub(tpl, r'<div class="logo"><\?xml.*?</svg>' + WS + '</div>' + WS + '<h1>Taiga</h1>',
           f'<h1 class="logo vetor-auth-logo">{LOGO}</h1>', 1, "logo da autorização de app externo", re.S)
-# Menu do usuário: link para a Administração, visível só para administradores (o servidor também nega).
-tpl = sub(tpl, r'(<li class="user-profile-option"><a href="#" tg-nav="user-settings-user-change-password")',
-          r'<li class="user-profile-option vetor-admin-link"><a href="vetor/administracao/" target="_self" class="secondary">Administração</a></li>\1',
-          1, "link de administração no menu do usuário")
 # "Taiga Logo" restante é o formato de arquivo do Taiga no importador: mantido.
 write(f"{version}/js/templates.js", tpl)
 
@@ -125,18 +121,12 @@ idx = sub(idx, r'<link rel="icon" type="image/png" href="[^"]*">',
 # Celular: menu do projeto começa recolhido (recurso nativo), sem sobrescrever a escolha do usuário.
 idx = sub(idx, r"(window\._taigaAvailableThemes = \[[^\]]*\];)",
           r"""\1
-      try { if (innerWidth <= 600 && localStorage.getItem('projectnav-collapsed') === null) localStorage.setItem('projectnav-collapsed', 'true'); } catch (e) {}
-      // Mostra o link da Administração para administradores; reconsulta quando o token muda (login/logout).
-      (function () { var ultimo;
-        function checar() { var t = localStorage.getItem('token'), api = window.taigaConfig && window.taigaConfig.api;
-          if (!api || t + api === ultimo) return; ultimo = t + api;  // api muda quando o conf.json carrega
-          document.documentElement.removeAttribute('data-vetor-admin'); if (!t) return;
-          fetch(api + 'vetor/perfis/me', { headers: { Authorization: 'Bearer ' + JSON.parse(t) } })
-            .then(function (r) { return r.ok ? r.json() : null; })
-            .then(function (me) { if (me && me.administrador) document.documentElement.setAttribute('data-vetor-admin', ''); })
-            .catch(function () {}); }
-        checar(); setInterval(checar, 3000); })();""",
+      try { if (innerWidth <= 600 && localStorage.getItem('projectnav-collapsed') === null) localStorage.setItem('projectnav-collapsed', 'true'); } catch (e) {}""",
           1, "menu recolhido no celular")
+# Barra lateral global também no app do Taiga.
+idx = sub(idx, r'(<link rel="stylesheet" href="v-[^"]+/styles/theme-taiga\.css">)',
+          r'\1\n    <link rel="stylesheet" href="vetor/ui/shell.css">\n'
+          f'    <script src="vetor/ui/shell.js" data-sprite="{version}/svg/sprite.svg" defer></script>', 1, "shell no app")
 write("index.html", idx)
 
 # 5. conf.json: ajuda aponta para o código-fonte e créditos (AGPL); feedback ia para support@taiga.io.
@@ -148,6 +138,9 @@ write("conf.json.template", conf)
 (out / "vetor").mkdir(parents=True, exist_ok=True)
 for name in ("logo-vetor-original.jpg", "favicon.svg"):
     shutil.copy(src / name, out / "vetor" / name)
-(out / "vetor/administracao").mkdir(parents=True, exist_ok=True)
-shutil.copy(src / "administracao/index.html", out / "vetor/administracao/index.html")
+# Telas próprias e a base compartilhada (ui/): o sprite de ícones do Taiga fica na pasta versionada.
+for pasta in ("ui", "administracao", "clientes", "busca"):
+    for arq in (src / pasta).iterdir():
+        texto = arq.read_text(encoding="utf-8").replace("__SPRITE__", f"{version}/svg/sprite.svg")
+        write(f"vetor/{pasta}/{arq.name}", texto)
 print(f"build.py: marca aplicada em {version}")
