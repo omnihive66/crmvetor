@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Busca - Vetor Sistemas</title>
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="stylesheet" href="../ui/vetor-ui.css">
+<link rel="stylesheet" href="../ui/shell.css">
+<script src="../ui/shell.js" data-sprite="__SPRITE__"></script>
+</head>
+<body>
+<div class="vt-topo"><nav aria-label="Você está em"><a href="../../">Visão geral</a> › Busca</nav></div>
+<main>
+  <h1>Busca</h1>
+  <form class="filtros" role="search" style="margin-top:16px" id="form">
+    <label class="sr" for="q">Termo</label>
+    <input type="search" id="q" name="q" minlength="2" placeholder="Clientes, CNPJ, documentos, projetos, histórias">
+    <button type="submit">Buscar</button>
+  </form>
+  <p class="vt-meta">Só aparece o que você tem permissão para ver. Lembretes privados nunca entram na busca.</p>
+  <div id="resultado" aria-live="polite"></div>
+</main>
+<script>
+"use strict";
+const { el, chamar, RAIZ } = Vetor;
+const q = new URLSearchParams(location.search).get("q") || "";
+document.getElementById("q").value = q;
+const GRUPOS = [
+  ["clientes", "Clientes", c => el("a", { href: `../clientes/cliente.html?id=${c.id}`, text: c.nome + (c.arquivado ? " (arquivado)" : "") })],
+  ["documentos", "Documentos", d => el("span", {}, el("a", { href: `../clientes/cliente.html?id=${d.cliente}&aba=documentos`, text: d.titulo }), el("span", { class: "vt-meta", text: ` · ${d.cliente_nome}` }))],
+  ["projetos", "Projetos", p => el("a", { href: `${RAIZ}project/${p.slug}/`, text: p.nome })],
+  ["historias", "Histórias", h => el("span", {}, el("a", { href: `${RAIZ}project/${h.projeto}/us/${h.ref}`, text: `#${h.ref} ${h.assunto}` }), el("span", { class: "vt-meta", text: ` · ${h.projeto_nome}` }))],
+];
+async function buscar() {
+  const alvo = document.getElementById("resultado");
+  if (q.trim().length < 2) return alvo.replaceChildren(el("p", { class: "estado", text: "Digite pelo menos 2 caracteres." }));
+  alvo.replaceChildren(el("p", { class: "estado", role: "status", text: "Buscando…" }));
+  try {
+    const r = (await chamar(`/vetor/busca?q=${encodeURIComponent(q.trim())}`)).corpo;
+    const grupos = GRUPOS.filter(([k]) => r[k].length);
+    if (!grupos.length) return alvo.replaceChildren(el("div", { class: "card estado" }, el("p", { text: `Nada encontrado para “${q}”.` })));
+    alvo.replaceChildren(...grupos.map(([k, titulo, linha]) => el("section", { class: "card", style: "margin-bottom:12px" },
+      el("h2", { text: titulo }), el("ul", { class: "lista-simples" }, ...r[k].map(i => el("li", {}, linha(i)))),
+      r[k].length >= 8 ? el("p", { class: "vt-meta", text: "Mostrando os 8 primeiros. Refine o termo para achar outros." }) : null)));
+  } catch (e) {
+    alvo.replaceChildren(el("div", { class: "card estado", role: "alert" }, el("p", { class: "erro", text: e.status === 401 ? "Sua sessão expirou." : "Não foi possível buscar: " + e.message }),
+      e.status === 401 ? el("a", { href: `${RAIZ}login`, text: "Entrar novamente" }) : el("button", { type: "button", class: "sec", text: "Tentar novamente", onclick: buscar })));
+  }
+}
+buscar();
+</script>
+</body>
+</html>

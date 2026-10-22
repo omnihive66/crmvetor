@@ -67,7 +67,3 @@ input:not([type=checkbox]):not([type=radio]), textarea, select { border-color: #
 .error-main { background: var(--vt-sidebar) !important; }
 .error-main a { color: var(--vt-brand); }
 .error-main .vetor-logo { margin: 0 auto 16px; }
-
-/* Link da Administração no menu do usuário: só para administradores (atributo posto por index.html). */
-.vetor-admin-link { display: none; }
-html[data-vetor-admin] .vetor-admin-link { display: list-item; }

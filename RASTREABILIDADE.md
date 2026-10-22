@@ -33,4 +33,5 @@ Essas respostas bloqueiam apenas a parte técnica dependente; não justificam si
 | 00 — Auditoria e fundação | Concluída: instalação, login, inventário, testes e backup verificados | `docs/entregas/00-fundacao.md` |
 | 01 — Identidade e experiência | Concluída com pendências: barra lateral global e busca global adiadas (decisão 0005), cabeçalho gráfico dos e-mails | `docs/entregas/01-identidade-interface.md` |
 | 02 — Identidades e permissões | Concluída: papéis com teto, Administração, auditoria e correções de eventos e exportações. Pendentes: MFA/SSO (provedor), lembretes privados chegam na SPEC-05 | `docs/entregas/02-usuarios-permissoes.md` |
-| 03 a 10 | Não iniciadas | — |
+| 03 — Clientes, documentos e reuniões | Concluída: CRM com escopo de acesso, documentos privados, reuniões que viram demanda, busca global e barra lateral. Pendentes: antivírus, retenção e nome do sistema financeiro | `docs/entregas/03-clientes-documentos.md` |
+| 04 a 10 | Não iniciadas | — |
