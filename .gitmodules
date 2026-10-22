@@ -1,0 +1,15 @@
+[submodule "upstream/taiga-back"]
+	path = upstream/taiga-back
+	url = https://github.com/taigaio/taiga-back.git
+[submodule "upstream/taiga-front"]
+	path = upstream/taiga-front
+	url = https://github.com/taigaio/taiga-front.git
+[submodule "upstream/taiga-docker"]
+	path = upstream/taiga-docker
+	url = https://github.com/taigaio/taiga-docker.git
+[submodule "upstream/taiga-events"]
+	path = upstream/taiga-events
+	url = https://github.com/taigaio/taiga-events.git
+[submodule "upstream/taiga-protected"]
+	path = upstream/taiga-protected
+	url = https://github.com/taigaio/taiga-protected.git

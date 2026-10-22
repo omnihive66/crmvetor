@@ -1,0 +1,34 @@
+# Rastreabilidade
+
+| Origem | Pedido | Especificação |
+|---|---|---|
+| 10:29:12 | Contas individuais, repasse de função, quadro, conversas e Git | 02, 04, 06 |
+| 10:30:38 | Projetos, etapas, vários responsáveis e GitHub/Azure | 04, 06 |
+| 10:31:27 | Visões de desenvolvedor e gestor | 01, 02 |
+| 10:32:45 | Demandas administrativas, integração com agente, virar projeto | 03, 04, 05 |
+| 10:34:21 | Lembretes privados, minitarefas e notificações | 04, 05 |
+| 10:37:59 | Dados do cliente, documentos e financeiro separado | 03, 09 |
+| 10:40:33 | Pós-venda, última reunião, banco, uso e último acesso | 07, 08 |
+| 10:41:55 e cópia (1) | Cards por cliente, abas, etapas flexíveis sem obrigatoriedade | DESIGN, 03, 04 |
+| 10:43:21 | Anotações, planejamento, POC, versão 1 e saúde | 03, 04, 08, 09 |
+| 10:44:05 | Calculadora de gastos | 09 |
+| 10:45:55 | AWS/Oracle e previsto versus realizado | 09 |
+| Conversa | Uptime Kuma e Beszel | 07 |
+| Pedido atual e imagem | Nome Vetor Sistemas, logo e acabamento premium | DESIGN, 01 |
+
+## Questões para refinamento, sem bloquear especificação
+- Confirmar se “berzel” é Beszel e qual o sistema financeiro mencionado.
+- Identificar versão/instalação do Taiga e provedor de repositórios.
+- Definir serviço Azure e contrato do agente existente.
+- Confirmar usuários, papéis e escopos; usar nomes nominais após validação.
+- Informar fontes disponíveis de auditoria/uso e credenciais de integração em canal seguro.
+- Definir orçamento, política de retenção e metas operacionais.
+
+Essas respostas bloqueiam apenas a parte técnica dependente; não justificam simular integrações como se funcionassem.
+
+## Estado das entregas
+
+| Spec | Estado | Relatório |
+|---|---|---|
+| 00 — Auditoria e fundação | Concluída: instalação, login, inventário, testes e backup verificados | `docs/entregas/00-fundacao.md` |
+| 01 a 10 | Não iniciadas | — |
