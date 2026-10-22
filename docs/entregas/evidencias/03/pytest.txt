@@ -1,0 +1,6 @@
+# ./scripts/test-backend.sh --ds=vetor.tests.settings vetor/tests <mesma lista ampliada da SPEC-02> — 22/10/2026
+16 failed, 871 passed, 10585 warnings in 975.22s (0:16:15)
+# 871 = 852 da rodada da SPEC-02 + 19 testes novos do CRM.
+# As 16 falhas são idênticas às da SPEC-02 (diff vazio): admin do projeto não configura integrações
+# (matriz da SPEC-02) e feedback para support@taiga.io desligado (SPEC-01). Nenhuma falha nova.
+# Rodada isolada da Vetor: ./scripts/test-backend.sh --ds=vetor.tests.settings vetor/tests → 50 passed

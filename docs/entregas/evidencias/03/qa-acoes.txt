@@ -1,0 +1,7 @@
+1. nome repetido → Já existe cliente chamado “[FICTÍCIO] Beta Logística”. Confirme para cadastrar mesmo assim. | botão: Cadastrar mesmo assim
+2. depois de recarregar: ciclo = operacao | modo tabela = true | linhas = 1
+3. documento enviado → true
+   download pela tela → proposta-ficticia.pdf
+4. demanda criada → #6 Enviar cronograma da integração ../../project/ficticio-portal-do-cliente/us/6
+   abre no Taiga → Enviar cronograma da integração - História de Usuário #6 - [FICTÍCIO] Portal do Cliente
+5. busca "cronograma" → Histórias#6 Enviar cronograma da integração · [FICTÍCIO] Portal do Cliente#7 Enviar cronograma da integração · [FICTÍCIO
