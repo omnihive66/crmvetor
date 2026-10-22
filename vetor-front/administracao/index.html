@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Administração - Vetor Sistemas</title>
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<style>
+  :root { --brand:#00d47a; --action:#087443; --sidebar:#090d0b; --canvas:#f5f7f6; --surface:#fff; --text:#14221b;
+          --muted:#52645a; --border:#dce5df; --field:#7a8b81; --danger:#b42318; --info:#175cd3; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--canvas); color:var(--text); font:15px/1.5 Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
+  header { display:flex; align-items:center; gap:16px; height:48px; padding:0 16px 0 0; background:var(--sidebar); color:#e8eeea; }
+  header a { color:#e8eeea; }
+  .logo { display:block; position:relative; overflow:hidden; width:160px; height:48px; background:#000; flex:none; }
+  .logo img { position:absolute; width:246px; height:246px; left:-44px; top:-91px; }  /* mesmo recorte de vetor.css */
+  header h1 { font-size:16px; font-weight:600; margin:0; flex:1; }
+  main { max-width:1200px; margin:0 auto; padding:24px 16px 48px; }
+  h2 { font-size:24px; margin:32px 0 12px; } h2:first-child { margin-top:0; }
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:16px; }
+  .tabela { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  caption { text-align:left; color:var(--muted); padding-bottom:8px; }
+  th, td { text-align:left; padding:8px; border-bottom:1px solid var(--border); vertical-align:middle; }
+  th { font-size:13px; color:var(--muted); font-weight:600; }
+  input[type=text], input[type=email], select { font:inherit; padding:6px 8px; border:1px solid var(--field); border-radius:8px; background:#fff; color:var(--text); }
+  button { font:inherit; padding:6px 14px; border-radius:8px; border:1px solid var(--action); background:var(--action); color:#fff; cursor:pointer; }
+  button.sec { background:#fff; color:var(--action); }
+  button:disabled { opacity:.55; cursor:not-allowed; }
+  :focus-visible { outline:2px solid var(--action); outline-offset:2px; }
+  header :focus-visible { outline-color:var(--brand); }
+  .estado { padding:24px; text-align:center; }
+  .erro { color:var(--danger); } .ok { color:var(--action); } .muted { color:var(--muted); font-size:13px; }
+  .form { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; align-items:end; }
+  .form label { display:flex; flex-direction:column; gap:4px; font-size:13px; color:var(--muted); }
+  .form label.check { flex-direction:row; align-items:center; gap:8px; color:var(--text); font-size:14px; }
+  .pager { display:flex; gap:8px; align-items:center; justify-content:flex-end; margin-top:12px; }
+  .tag { display:inline-block; padding:1px 8px; border-radius:999px; border:1px solid var(--border); font-size:12px; }
+  .detalhes { font-family:ui-monospace, monospace; font-size:12px; color:var(--muted); max-width:420px; word-break:break-word; }
+  @media (prefers-reduced-motion: reduce) { * { transition:none !important; animation:none !important; } }
+</style>
+</head>
+<body>
+<header>
+  <a class="logo" href="../../" title="Voltar ao início"><img src="../logo-vetor-original.jpg" alt="Vetor Sistemas" width="640" height="640"></a>
+  <h1>Administração</h1>
+  <a href="../../">Voltar ao início</a>
+</header>
+<main id="conteudo"><div class="card estado" role="status">Carregando…</div></main>
+
+<template id="tpl-painel">
+  <h2>Pessoas</h2>
+  <div class="card">
+    <form id="nova" class="form" novalidate>
+      <label>Nome completo<input type="text" name="full_name" required autocomplete="off"></label>
+      <label>Usuário<input type="text" name="username" required autocomplete="off"></label>
+      <label>E-mail<input type="email" name="email" required autocomplete="off"></label>
+      <label>Papel<select name="papel"></select></label>
+      <label class="check"><input type="checkbox" name="ver_custos"> Ver custos</label>
+      <button type="submit">Criar conta</button>
+    </form>
+    <p class="muted">A pessoa recebe um e-mail para definir a própria senha. Ninguém além dela conhece a senha.</p>
+    <p id="nova-msg" role="status" aria-live="polite"></p>
+  </div>
+  <div class="card tabela" style="margin-top:16px">
+    <table>
+      <caption>Papel na organização, permissão de custos e acesso. O acesso a cada projeto continua sendo definido no próprio projeto, limitado pelo papel.</caption>
+      <thead><tr><th scope="col">Nome</th><th scope="col">Usuário</th><th scope="col">E-mail</th><th scope="col">Papel</th><th scope="col">Ver custos</th><th scope="col">Ativo</th><th scope="col"><span class="muted">Ação</span></th></tr></thead>
+      <tbody id="pessoas"></tbody>
+    </table>
+    <div class="pager" id="pager-pessoas"></div>
+  </div>
+  <h2>Auditoria</h2>
+  <div class="card tabela">
+    <table>
+      <caption>Mudanças de acesso, da mais recente para a mais antiga. Horários em America/Sao_Paulo.</caption>
+      <thead><tr><th scope="col">Quando</th><th scope="col">Quem</th><th scope="col">Ação</th><th scope="col">Alvo</th><th scope="col">Detalhes</th></tr></thead>
+      <tbody id="auditoria"></tbody>
+    </table>
+    <div class="pager" id="pager-auditoria"></div>
+  </div>
+</template>
+
+<script>
+"use strict";
+const PAPEIS = { administrador: "Administrador", gestor: "Gestor", desenvolvedor: "Desenvolvedor", observador: "Observador" };
+const ACOES = {
+  "perfil.criado": "Papel definido", "perfil.alterado": "Papel alterado", "perfil.migracao_inicial": "Papéis iniciais (migração)",
+  "usuario.criado": "Conta criada", "usuario.ativado": "Conta reativada", "usuario.desativado": "Conta desativada",
+  "membership.criada": "Entrada em projeto", "membership.alterada": "Acesso a projeto alterado", "membership.removida": "Saída de projeto",
+  "papel_projeto.permissoes_alteradas": "Permissões de papel do projeto alteradas",
+};
+const quando = new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "medium", timeZone: "America/Sao_Paulo" });
+const main = document.getElementById("conteudo");
+let API = null;
+
+function token() { try { return JSON.parse(localStorage.getItem("token")); } catch (e) { return null; } }
+function el(tag, attrs = {}, ...filhos) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) k === "text" ? (e.textContent = v) : e.setAttribute(k, v);
+  e.append(...filhos); return e;
+}
+function estado(mensagem, { erro = false, acao = null } = {}) {
+  main.replaceChildren(el("div", { class: "card estado", role: erro ? "alert" : "status" },
+    el("p", { class: erro ? "erro" : "", text: mensagem }), ...(acao ? [acao] : [])));
+}
+async function chamar(caminho, opcoes = {}) {
+  const r = await fetch(API + caminho, { ...opcoes, headers: { "Content-Type": "application/json", "Accept-Language": "pt-br",
+    Authorization: "Bearer " + token(), ...(opcoes.headers || {}) } });
+  const corpo = r.status === 204 ? null : await r.json().catch(() => null);
+  if (!r.ok) throw Object.assign(new Error((corpo && corpo._error_message) || "Erro " + r.status), { status: r.status, corpo });
+  return { corpo, total: Number(r.headers.get("x-pagination-count") || 0), proxima: !!r.headers.get("x-pagination-next") };
+}
+function falha(e, tentar) {
+  if (e.status === 401) return estado("Sua sessão expirou. Entre novamente.", { acao: el("a", { href: "../../login", text: "Ir para o login" }) });
+  if (e.status === 403) return estado("Acesso negado. Esta área é só para administradores da organização.", { erro: true });
+  estado("Não foi possível carregar: " + e.message, { erro: true, acao: el("button", { type: "button", class: "sec", text: "Tentar novamente" }) });
+  main.querySelector("button").onclick = tentar;
+}
+function pager(id, pagina, temProxima, total, carregar) {
+  const p = document.getElementById(id);
+  const ant = el("button", { type: "button", class: "sec", text: "Anterior" }), prox = el("button", { type: "button", class: "sec", text: "Próxima" });
+  ant.disabled = pagina <= 1; prox.disabled = !temProxima;
+  ant.onclick = () => carregar(pagina - 1); prox.onclick = () => carregar(pagina + 1);
+  p.replaceChildren(el("span", { class: "muted", text: `Página ${pagina} · ${total} no total` }), ant, prox);
+}
+function opcoesPapel(select, atual) { for (const [v, n] of Object.entries(PAPEIS)) select.append(el("option", { value: v, text: n })); select.value = atual; }
+
+async function carregarPessoas(pagina = 1) {
+  const tbody = document.getElementById("pessoas");
+  tbody.replaceChildren(el("tr", {}, el("td", { colspan: 7, class: "muted", text: "Carregando…" })));
+  try {
+    const { corpo, total, proxima } = await chamar(`/vetor/perfis?page=${pagina}`);
+    if (!corpo.length) return tbody.replaceChildren(el("tr", {}, el("td", { colspan: 7, class: "muted", text: "Nenhuma pessoa cadastrada. Crie a primeira conta acima." })));
+    tbody.replaceChildren(...corpo.map(linhaPessoa));
+    pager("pager-pessoas", pagina, proxima, total, carregarPessoas);
+  } catch (e) { tbody.replaceChildren(el("tr", {}, el("td", { colspan: 7, class: "erro", text: "Erro ao carregar: " + e.message }))); }
+}
+function linhaPessoa(p) {
+  const papel = el("select", { "aria-label": `Papel de ${p.full_name || p.username}` }); opcoesPapel(papel, p.papel);
+  const custos = el("input", { type: "checkbox", "aria-label": `${p.full_name || p.username} pode ver custos` }); custos.checked = p.ver_custos;
+  const ativo = el("input", { type: "checkbox", "aria-label": `Conta de ${p.full_name || p.username} ativa` }); ativo.checked = p.is_active;
+  const salvar = el("button", { type: "button", text: "Salvar" }); salvar.disabled = true;
+  const msg = el("span", { role: "status", "aria-live": "polite", class: "muted" });
+  const mudou = () => { salvar.disabled = papel.value === p.papel && custos.checked === p.ver_custos && ativo.checked === p.is_active; msg.textContent = ""; };
+  [papel, custos, ativo].forEach(c => c.addEventListener("change", mudou));
+  salvar.onclick = async () => {
+    salvar.disabled = true; msg.className = "muted"; msg.textContent = "Salvando…";
+    try {
+      const { corpo } = await chamar(`/vetor/perfis/${p.id}`, { method: "PATCH", body: JSON.stringify({ papel: papel.value, ver_custos: custos.checked, is_active: ativo.checked }) });
+      Object.assign(p, corpo); msg.className = "ok"; msg.textContent = "Salvo."; carregarAuditoria(1);
+    } catch (e) {
+      papel.value = p.papel; custos.checked = p.ver_custos; ativo.checked = p.is_active;
+      msg.className = "erro"; msg.textContent = e.message;
+    }
+  };
+  const nome = el("td", { text: p.full_name || "—" });
+  if (p.is_superuser) nome.append(" ", el("span", { class: "tag", title: "Conta técnica com acesso total ao Taiga", text: "técnica" }));
+  return el("tr", {}, nome, el("td", { text: p.username }), el("td", { text: p.email }), el("td", {}, papel),
+    el("td", {}, custos), el("td", {}, ativo), el("td", {}, salvar, " ", msg));
+}
+
+async function carregarAuditoria(pagina = 1) {
+  const tbody = document.getElementById("auditoria");
+  tbody.replaceChildren(el("tr", {}, el("td", { colspan: 5, class: "muted", text: "Carregando…" })));
+  try {
+    const { corpo, total, proxima } = await chamar(`/vetor/auditoria?page=${pagina}`);
+    if (!corpo.length) return tbody.replaceChildren(el("tr", {}, el("td", { colspan: 5, class: "muted", text: "Nenhum registro ainda." })));
+    tbody.replaceChildren(...corpo.map(a => el("tr", {},
+      el("td", { text: quando.format(new Date(a.ocorrido_em)) }), el("td", { text: a.ator_nome }),
+      el("td", { text: ACOES[a.acao] || a.acao }), el("td", { text: `${a.alvo_tipo} #${a.alvo_id}` }),
+      el("td", { class: "detalhes", text: JSON.stringify(a.detalhes) }))));
+    pager("pager-auditoria", pagina, proxima, total, carregarAuditoria);
+  } catch (e) { tbody.replaceChildren(el("tr", {}, el("td", { colspan: 5, class: "erro", text: "Erro ao carregar: " + e.message }))); }
+}
+
+function prepararFormulario() {
+  const form = document.getElementById("nova"), msg = document.getElementById("nova-msg");
+  opcoesPapel(form.papel, "observador");
+  form.onsubmit = async ev => {
+    ev.preventDefault(); msg.className = "muted"; msg.textContent = "Criando…";
+    const dados = { full_name: form.full_name.value, username: form.username.value, email: form.email.value, papel: form.papel.value, ver_custos: form.ver_custos.checked };
+    try {
+      await chamar("/vetor/perfis", { method: "POST", body: JSON.stringify(dados) });
+      msg.className = "ok"; msg.textContent = `Conta criada. ${dados.email} recebeu o e-mail para definir a senha.`;
+      form.reset(); form.papel.value = "observador"; carregarPessoas(1); carregarAuditoria(1);
+    } catch (e) {
+      const erros = e.corpo && typeof e.corpo === "object" && !e.corpo._error_message ? e.corpo : null;
+      msg.className = "erro"; msg.textContent = erros ? Object.values(erros).flat().join(" ") : e.message;
+    }
+  };
+}
+
+async function iniciar() {
+  estado("Carregando…");
+  if (!token()) return estado("Entre no sistema para acessar a administração.", { acao: el("a", { href: "../../login", text: "Ir para o login" }) });
+  try {
+    if (!API) API = (await (await fetch("../../conf.json")).json()).api.replace(/\/$/, "");
+    const { corpo: me } = await chamar("/vetor/perfis/me");
+    if (!me.administrador) return estado("Acesso negado. Esta área é só para administradores da organização.", { erro: true });
+    main.replaceChildren(document.getElementById("tpl-painel").content.cloneNode(true));
+    prepararFormulario(); carregarPessoas(1); carregarAuditoria(1);
+  } catch (e) { falha(e, iniciar); }
+}
+iniciar();
+</script>
+</body>
+</html>

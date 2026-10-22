@@ -1,14 +1,11 @@
 # Configuração da Vetor Sistemas: parte do config.py oficial da imagem Docker e acrescenta o app "vetor".
-# Montado em /taiga-back/settings/config.py; o oficial vai como settings/config_taiga.py.
+# A imagem (vetor-back/Dockerfile) põe este arquivo em settings/config.py e o oficial em settings/config_taiga.py.
 import os
 
 from .config_taiga import *  # noqa: F401,F403
+from vetor.ajustes import aplicar
 
-INSTALLED_APPS = ["vetor"] + INSTALLED_APPS  # primeiro: templates e estáticos da Vetor têm prioridade
-ROOT_URLCONF = "vetor.urls"
-LOCALE_PATHS = (os.path.join(BASE_DIR, "vetor", "locale"),) + tuple(LOCALE_PATHS)
-
-FEEDBACK_ENABLED = False  # o feedback oficial envia para support@taiga.io
+aplicar(globals())
 
 _source_url = os.getenv("VETOR_SOURCE_URL", "")
 SR = {

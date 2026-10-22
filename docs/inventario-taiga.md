@@ -93,7 +93,7 @@ N = nativo, C = configuração, D = desenvolvimento.
 | 02 | Contas nominais, desativação, revogação | N | `is_active` checado a cada requisição |
 | 02 | Papéis por projeto | N | roles por projeto |
 | 02 | Papel organizacional (gestor/observador em vários projetos) | D | não existe nível acima de projeto |
-| 02 | Auditoria de troca de papel | D (provável) | não verificado se o histórico nativo registra mudanças de membership; confirmar na SPEC-02 |
+| 02 | Auditoria de troca de papel | D | o histórico nativo não registra memberships: feito na SPEC-02 (`vetor.Auditoria`) |
 | 02 | MFA / SSO corporativo | D ou externo | sem suporte nativo |
 | 03 | Cliente, contatos, documentos, reuniões | D | app novo; vínculo projeto ↔ cliente |
 | 04 | Etapas configuráveis e modelos de fluxo | N + C | status por projeto e templates |
@@ -132,7 +132,10 @@ N = nativo, C = configuração, D = desenvolvimento.
 
 ## Riscos encontrados
 - PostgreSQL 12, RabbitMQ 3.8 e nginx 1.19 fora de suporte nas versões oficiais. Atualizar exige migração de dados planejada (SPEC-10).
-- `/media/exports/` é servido **sem token** pelo gateway oficial; a proteção é só o nome aleatório (UUID) do arquivo. Tratar antes de produção (SPEC-02/10).
+- `/media/exports/` era servido **sem token** pelo gateway oficial (proteção só pelo UUID no nome). **Corrigido na SPEC-02:** `infra/taiga-gateway.conf` + `vetor-protected/` (token assinado, validade `ATTACHMENTS_MAX_AGE`).
+- **`ATOMIC_REQUESTS = True` do Taiga não tem efeito** (está no nível de settings, não em `DATABASES`): requisições não são transacionais e um erro no meio deixa escrita parcial. A Vetor torna transacionais as escritas de projetos, memberships, papéis e perfis (`vetor.api.TransacaoNaEscrita`, SPEC-02).
+- **taiga-events aceitava qualquer assinatura:** qualquer usuário autenticado podia assinar `changes.project.<id>` de qualquer projeto (metadados) e `web_notifications.<id>` de outra pessoa (conteúdo das notificações). **Corrigido na SPEC-02:** `vetor-events/`.
+- As listagens do Taiga não chamam `check_permissions` (o escopo vem só dos filtros). Endpoints novos precisam checar permissão também em `list`.
 - `SECRET_KEY` e senhas do `.env` oficial são fixas e fracas; substituídas por segredos aleatórios via `scripts/vetor.sh init-env`.
 - Telemetria anônima da Kaleidos ligada por padrão no upstream; desligada aqui (`ENABLE_TELEMETRY=False`).
 - Assinatura GitHub em SHA1 e webhooks de saída em HMAC-SHA1.
