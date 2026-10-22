@@ -31,4 +31,5 @@ Essas respostas bloqueiam apenas a parte técnica dependente; não justificam si
 | Spec | Estado | Relatório |
 |---|---|---|
 | 00 — Auditoria e fundação | Concluída: instalação, login, inventário, testes e backup verificados | `docs/entregas/00-fundacao.md` |
-| 01 a 10 | Não iniciadas | — |
+| 01 — Identidade e experiência | Concluída com pendências: barra lateral global e busca global adiadas (decisão 0005), cabeçalho gráfico dos e-mails | `docs/entregas/01-identidade-interface.md` |
+| 02 a 10 | Não iniciadas | — |

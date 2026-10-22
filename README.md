@@ -28,3 +28,16 @@ Para cada especificação: inspecionar código; registrar plano e impactos; impl
 
 ## Decisões propostas, ainda ajustáveis
 Organização única Vetor Sistemas, preparada no modelo para separação futura entre organizações. Acesso inicial apenas interno; clientes externos são uma evolução. Login nominal por pessoa, sem conta compartilhada da matriz. Papéis iniciais: administrador, gestor, desenvolvedor e observador. Gerência não tem acesso automático a lembretes privados. Nenhum campo extra de fase é obrigatório por padrão. Datas armazenadas em UTC e exibidas em America/Sao_Paulo; valores em BRL, preservando moeda de origem.
+
+## Créditos e licenças
+
+A Vetor Sistemas é construída sobre o [Taiga](https://taiga.io), da Kaleidos INC, sem fork do núcleo:
+
+| Componente | Licença | Código-fonte usado |
+|---|---|---|
+| taiga-back, taiga-events, taiga-protected, taiga-docker | MPL-2.0 | `upstream/` (submódulos fixados) |
+| taiga-front | AGPL-3.0 | `upstream/taiga-front`; as alterações da Vetor estão em `vetor-front/` |
+| Arquivos da Vetor derivados de arquivos do Taiga (tema, templates, textos e o rodapé de e-mail) | a licença do arquivo original | gerados por `vetor-front/build.py`; `vetor-back/vetor/templates/` |
+| Demais arquivos da Vetor | a definir pela Vetor Sistemas | `vetor-front/`, `vetor-back/`, `infra/`, `scripts/` |
+
+Como a interface modificada é servida pela rede, este repositório é o código-fonte correspondente exigido pela AGPL-3.0: o item "Ajuda, código-fonte e créditos" do menu do sistema aponta para cá. "Taiga" é marca da Kaleidos; a Vetor Sistemas não é um produto oficial do Taiga.
