@@ -1,0 +1,17 @@
+# Suíte oficial ampliada com o app da Vetor ativo — taiga-back 6.10.2, Postgres 12.3 descartável — 22/10/2026
+# ./scripts/test-backend.sh --ds=vetor.tests.settings vetor/tests tests/integration/resources_permissions
+#   tests/integration/{test_auth,test_permissions,test_attachments,test_occ,test_memberships,test_roles,test_searches,
+#   test_hooks_github,test_users,test_projects,test_webhooks,test_exporter_api,test_userstories,test_tasks,test_project_settings}.py
+16 failed, 852 passed, 10524 warnings in 975.91s (0:16:15)
+
+# As 16 falhas são mudanças de comportamento pedidas pela spec, não defeitos:
+# - 15 em webhooks, logs de webhook e projects/<id>/modules (test_webhooks_resources, test_modules_resources,
+#   test_hooks_github::test_api_*_project_modules, test_webhooks::test_webhook_action_test_transform_to_json):
+#   o Taiga espera 200 para o ADMIN DO PROJETO; na Vetor só o Administrador da organização configura
+#   integrações (matriz da SPEC-02) e o admin do projeto recebe 403.
+# - 1 em test_feedback::test_feedback_create: feedback para support@taiga.io desligado desde a SPEC-01 (rota removida).
+#
+# Depois da correção "anônimo recebe 401, não 403" nas rotas da Vetor, nova rodada dos arquivos afetados:
+16 failed, 62 passed, 309 warnings in 44.47s
+# Todas as diferenças restantes estão na coluna do admin do projeto (403 em vez de 200/201/204) ou na rota de
+# feedback; anônimo (401) e não membro (403/404) iguais ao Taiga. Os 31 testes da Vetor passaram (rodada isolada: 31 passed).

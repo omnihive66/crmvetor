@@ -32,4 +32,5 @@ Essas respostas bloqueiam apenas a parte técnica dependente; não justificam si
 |---|---|---|
 | 00 — Auditoria e fundação | Concluída: instalação, login, inventário, testes e backup verificados | `docs/entregas/00-fundacao.md` |
 | 01 — Identidade e experiência | Concluída com pendências: barra lateral global e busca global adiadas (decisão 0005), cabeçalho gráfico dos e-mails | `docs/entregas/01-identidade-interface.md` |
-| 02 a 10 | Não iniciadas | — |
+| 02 — Identidades e permissões | Concluída: papéis com teto, Administração, auditoria e correções de eventos e exportações. Pendentes: MFA/SSO (provedor), lembretes privados chegam na SPEC-05 | `docs/entregas/02-usuarios-permissoes.md` |
+| 03 a 10 | Não iniciadas | — |

@@ -6,8 +6,8 @@ A Vetor Sistemas é uma instalação do Taiga oficial, sem fork do núcleo, com 
 navegador ──► taiga-gateway (nginx :9000)
                ├─ /            taiga-front  (imagem vetor/taiga-front: SPA oficial + marca aplicada no build)
                ├─ /api/        taiga-back   (imagem vetor/taiga-back: API oficial + app Django `vetor`)
-               ├─ /events      taiga-events (WebSocket) ◄── taiga-events-rabbitmq
-               └─ /media/      taiga-protected (token assinado)
+               ├─ /events      taiga-events (imagem vetor/taiga-events: assinatura só do que o usuário pode ver)
+               └─ /media/      taiga-protected (imagem vetor/taiga-protected: anexos e exportações com token assinado)
              taiga-async (Celery) ◄── taiga-async-rabbitmq
              taiga-db (PostgreSQL)
 ```
@@ -25,10 +25,13 @@ navegador ──► taiga-gateway (nginx :9000)
 | `specs/`, `DESIGN.md`, `COMANDOS.md`, `RASTREABILIDADE.md` | o pacote de especificação |
 
 | `vetor-front/` | `Dockerfile` + `build.py`: aplica paleta, logos, textos pt-BR e título sobre o build oficial do front (decisão 0003) |
-| `vetor-back/` | `Dockerfile`, `settings/config.py` e o app Django `vetor` (rotas, traduções e templates de e-mail; decisão 0002) |
+| `vetor-back/` | `Dockerfile`, `settings/config.py` e o app Django `vetor`: papéis e auditoria (decisão 0006), rotas, traduções e e-mails (decisão 0002) |
+| `vetor-front/administracao/` | tela de Administração (pessoas, papéis, auditoria), servida em `/vetor/administracao/` |
+| `vetor-events/`, `vetor-protected/` | imagens derivadas com uma troca verificada no código oficial (falham no build se o trecho mudar) |
+| `infra/taiga-gateway.conf` | gateway oficial sem a seção que servia exportações sem token |
 | `scripts/qa/` | capturas de tela, teclado/zoom e menu por papel (Playwright) |
 
-`./scripts/vetor.sh up` reconstrói as duas imagens derivadas (rápido, com cache) e reinicia o gateway.
+`./scripts/vetor.sh up` reconstrói as imagens derivadas (rápido, com cache) e reinicia o gateway.
 
 ## Operação local
 
