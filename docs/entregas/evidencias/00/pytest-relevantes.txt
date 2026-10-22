@@ -1,0 +1,9 @@
+# ./scripts/test-backend.sh — taiga-back 6.10.2, Postgres 12.3 descartável — 22/10/2026
+I=tests/integration; R=$I/resources_permissions
+./scripts/test-backend.sh $I/test_auth.py $I/test_permissions.py $I/test_attachments.py $I/test_occ.py \
+  $I/test_memberships.py $I/test_roles.py $I/test_searches.py $I/test_hooks_github.py $I/test_users.py \
+  $R/test_attachment_resources.py $R/test_projects_resource.py $R/test_userstories_resources.py \
+  $R/test_tasks_resources.py $R/test_search_resources.py $R/test_users_resources.py $R/test_auth_resources.py
+
+315 passed, 3719 warnings in 333.20s (0:05:33)
+# avisos: DeprecationWarning do factory-boy e do Django 3.2; nenhuma falha.
