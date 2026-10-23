@@ -44,6 +44,7 @@
       ["projects/", "Projetos", "icon-folder", /^(projects|project)\//],
       ["vetor/monitoramento/", "Monitoramento", "icon-activity", /^vetor\/monitoramento\//],
     ];
+    if (me && me.ver_custos) lista.push(["vetor/custos/", "Custos", "icon-graph", /^vetor\/custos\//]);
     if (me && me.administrador) lista.push(["vetor/administracao/", "Administração", "icon-settings", /^vetor\/administracao\//]);
     return lista;
   }

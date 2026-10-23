@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Custos - Vetor Sistemas</title>
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="stylesheet" href="../ui/vetor-ui.css">
+<link rel="stylesheet" href="../ui/shell.css">
+<script src="../ui/shell.js" data-sprite="__SPRITE__"></script>
+<style>section { margin-bottom: 28px; } code { font-size: 13px; }</style>
+</head>
+<body>
+<div class="vt-topo"><nav aria-label="Você está em"><a href="../../">Visão geral</a> › Custos</nav></div>
+<main id="conteudo"><div class="card estado" role="status">Carregando…</div></main>
+
+<template id="tpl">
+  <div class="vt-cabecalho"><div><h1>Custos</h1>
+    <p class="vt-meta">Realizado importado ou lançado à mão, rateio de compartilhados e taxas de câmbio. Estimativas e orçamento ficam na aba Custos de cada cliente.
+      A fonte contratual é o sistema financeiro; consumo parcial do mês não é fatura.</p></div>
+    <label>Mês <input type="month" id="mes"></label></div>
+
+  <section aria-labelledby="t-imp"><h2 id="t-imp">Importar realizado (CSV)</h2>
+    <form id="imp" class="card campos" novalidate>
+      <label>Lote (fonte + mês, ex.: aws-2026-10)<input type="text" name="lote" maxlength="80" required></label>
+      <label>Arquivo CSV<input type="file" name="arquivo" accept=".csv,text/csv" required></label>
+      <div class="acoes"><button type="submit">Importar</button></div>
+      <p class="vt-meta largo">Colunas: <code>id;periodo;categoria;descricao;valor;moeda;cliente;parcial</code>. <code>periodo</code> = AAAA-MM; <code>valor</code> com vírgula ou ponto decimal;
+        <code>cliente</code> = id (vazio = não alocado); <code>parcial</code> = sim/não. Reimportar o mesmo lote não duplica; uma linha com erro recusa o arquivo inteiro.</p>
+      <p id="imp-msg" class="largo" role="status"></p>
+    </form>
+  </section>
+
+  <section aria-labelledby="t-nao"><h2 id="t-nao">Não alocados no mês</h2>
+    <p class="vt-meta">Custos sem cliente (compartilhados ou sem tag) e sem regra de rateio da categoria no mês. Não entram no realizado de nenhum cliente.</p>
+    <div id="nao"></div>
+  </section>
+
+  <section aria-labelledby="t-rat"><h2 id="t-rat">Rateio do mês</h2>
+    <div id="rateios"></div>
+    <form id="rat" class="card campos" novalidate>
+      <label>Categoria<input type="text" name="categoria" maxlength="80" required></label>
+      <label class="largo">Partes (uma por linha: cliente = percentual; soma 100)<textarea name="partes" placeholder="ACME = 60&#10;Globex = 40"></textarea></label>
+      <div class="acoes"><button type="submit" class="sec">Salvar regra</button></div>
+      <p id="rat-msg" class="largo" role="status"></p>
+    </form>
+  </section>
+
+  <section aria-labelledby="t-tx"><h2 id="t-tx">Taxas de câmbio</h2>
+    <p class="vt-meta">Conversão só aparece com taxa, data e origem registradas aqui.</p>
+    <div id="taxas"></div>
+    <form id="tx" class="card campos" novalidate>
+      <label>De<input type="text" name="moeda_origem" maxlength="3" value="USD"></label>
+      <label>Para<input type="text" name="moeda_destino" maxlength="3" value="BRL"></label>
+      <label>Taxa<input type="text" name="taxa" inputmode="decimal"></label>
+      <label>Data<input type="date" name="data"></label>
+      <label class="largo">Origem<input type="text" name="origem" maxlength="200" placeholder="PTAX BCB venda"></label>
+      <div class="acoes"><button type="submit" class="sec">Registrar taxa</button></div>
+      <p id="tx-msg" class="largo" role="status"></p>
+    </form>
+  </section>
+
+  <section aria-labelledby="t-exp"><h2 id="t-exp">Exportar</h2>
+    <button type="button" class="sec" id="exportar">Baixar realizado do mês (CSV)</button>
+  </section>
+</template>
+
+<script>
+"use strict";
+const { el, chamar, RAIZ } = Vetor;
+const B = "/vetor/custos", main = document.getElementById("conteudo");
+const brl = (v, m = "BRL") => new Intl.NumberFormat("pt-BR", { style: "currency", currency: m }).format(Number(v));
+let clientes = [], mes = new Date().toISOString().slice(0, 7);
+const erroDe = e => e.corpo && typeof e.corpo === "object" && !e.corpo._error_message ? JSON.stringify(e.corpo) : e.message;
+
+async function nao() {
+  const alvo = document.getElementById("nao");
+  const lista = (await chamar(`${B}/realizados?nao_alocados=true&periodo=${mes}`)).corpo;
+  alvo.replaceChildren(lista.length ? el("ul", { class: "lista-simples card" }, ...lista.map(c => el("li", {}, `${c.categoria}${c.descricao ? " · " + c.descricao : ""}: ${brl(c.valor, c.moeda)}`,
+    c.parcial ? el("span", { class: "chip", style: "margin-left:8px", text: "parcial" }) : null, c.lote ? el("span", { class: "vt-meta", text: ` · ${c.lote}` }) : null)))
+    : el("p", { class: "vt-meta", text: "Nada não alocado neste mês." }));
+}
+async function rateios() {
+  const alvo = document.getElementById("rateios"), nome = id => (clientes.find(c => String(c.id) === id) || {}).nome || `cliente ${id}`;
+  const lista = (await chamar(`${B}/rateios?periodo=${mes}`)).corpo;
+  alvo.replaceChildren(lista.length ? el("ul", { class: "lista-simples card" }, ...lista.map(r => el("li", {}, el("strong", { text: r.categoria }), ": ",
+    Object.entries(r.partes).map(([c, p]) => `${nome(c)} ${p}%`).join(" · "),
+    el("button", { type: "button", class: "perigo", style: "margin-left:12px", text: "Remover", onclick: async () => { await chamar(`${B}/rateios/${r.id}`, { method: "DELETE" }); atualizar(); } }))))
+    : el("p", { class: "vt-meta", text: "Sem regras de rateio neste mês." }));
+}
+async function taxas() {
+  const lista = (await chamar(`${B}/taxas`)).corpo;
+  document.getElementById("taxas").replaceChildren(lista.length ? el("ul", { class: "lista-simples card" }, ...lista.slice(0, 10).map(t => el("li", { text: `1 ${t.moeda_origem} = ${t.taxa} ${t.moeda_destino} · ${t.data} · ${t.origem}` })))
+    : el("p", { class: "vt-meta", text: "Nenhuma taxa registrada." }));
+}
+function atualizar() { nao(); rateios(); taxas(); }
+
+function preparar() {
+  const m = document.getElementById("mes"); m.value = mes; m.onchange = () => { mes = m.value; atualizar(); };
+  const imp = document.getElementById("imp"), impMsg = document.getElementById("imp-msg");
+  imp.onsubmit = async ev => { ev.preventDefault();
+    if (!imp.lote.value.trim() || !imp.arquivo.files[0]) { impMsg.className = "erro"; impMsg.textContent = "Informe o lote e o arquivo."; return; }
+    const fd = new FormData(); fd.append("lote", imp.lote.value); fd.append("arquivo", imp.arquivo.files[0]);
+    try { const r = (await chamar(`${B}/realizados/importar`, { method: "POST", body: fd })).corpo;
+      impMsg.className = "ok"; impMsg.textContent = `${r.importados} importado(s), ${r.ja_existiam} já existia(m) (não duplicados), ${r.nao_alocados} não alocado(s).`; atualizar(); }
+    catch (e) { impMsg.className = "erro"; impMsg.textContent = "Nada foi importado: " + erroDe(e); } };
+  const rat = document.getElementById("rat"), ratMsg = document.getElementById("rat-msg");
+  rat.onsubmit = async ev => { ev.preventDefault();
+    const partes = {};
+    for (const linha of rat.partes.value.split("\n").map(l => l.trim()).filter(Boolean)) {
+      const [nome, pct] = linha.split("=").map(x => x.trim());
+      const c = clientes.find(x => x.nome.toLowerCase() === (nome || "").toLowerCase() || String(x.id) === nome);
+      if (!c) { ratMsg.className = "erro"; ratMsg.textContent = `Cliente “${nome}” não encontrado.`; return; }
+      partes[c.id] = pct;
+    }
+    try { await chamar(`${B}/rateios`, { method: "POST", body: JSON.stringify({ periodo: mes, categoria: rat.categoria.value, partes }) });
+      ratMsg.className = "ok"; ratMsg.textContent = "Regra salva."; rat.reset(); atualizar(); }
+    catch (e) { ratMsg.className = "erro"; ratMsg.textContent = erroDe(e); } };
+  const tx = document.getElementById("tx"), txMsg = document.getElementById("tx-msg");
+  tx.onsubmit = async ev => { ev.preventDefault();
+    try { await chamar(`${B}/taxas`, { method: "POST", body: JSON.stringify(Object.fromEntries(["moeda_origem", "moeda_destino", "taxa", "data", "origem"].map(k => [k, tx[k].value]))) });
+      txMsg.className = "ok"; txMsg.textContent = "Taxa registrada."; taxas(); }
+    catch (e) { txMsg.className = "erro"; txMsg.textContent = erroDe(e); } };
+  document.getElementById("exportar").onclick = async () => {
+    const api = (await (await fetch(`${RAIZ}conf.json`)).json()).api.replace(/\/$/, "");
+    const r = await fetch(`${api}${B}/realizados/exportar?periodo=${mes}`, { headers: { Authorization: "Bearer " + Vetor.token() } });
+    if (!r.ok) return alert("Não foi possível exportar (" + r.status + ").");
+    const a = el("a", { href: URL.createObjectURL(await r.blob()), download: `custos-${mes}.csv` }); document.body.append(a); a.click(); a.remove();
+  };
+}
+
+async function iniciar() {
+  if (!Vetor.token()) return main.replaceChildren(el("div", { class: "card estado" }, el("p", { text: "Entre no sistema." }), el("a", { href: `${RAIZ}login`, text: "Ir para o login" })));
+  const eu = await Vetor.me();
+  if (!eu || !eu.ver_custos) return main.replaceChildren(el("div", { class: "card estado", role: "alert" }, el("p", { class: "erro", text: "Sem permissão financeira. Peça ao Administrador a opção “Ver custos”." })));
+  main.replaceChildren(document.getElementById("tpl").content.cloneNode(true));
+  try { clientes = (await chamar("/vetor/clientes?page_size=500")).corpo; } catch (e) { console.warn("Clientes:", e.message); }
+  preparar(); atualizar();
+}
+iniciar();
+</script>
+</body>
+</html>

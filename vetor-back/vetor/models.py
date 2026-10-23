@@ -341,3 +341,107 @@ class EventoUso(models.Model):
     class Meta:
         constraints = [models.UniqueConstraint(fields=["produto", "id_externo"], name="vetor_evento_uso_unico")]
         indexes = [models.Index(fields=["produto", "tipo", "ocorrido_em"])]
+
+
+# Custos (SPEC-09): só quem tem Perfil.ver_custos lê ou escreve. O sistema financeiro externo segue como fonte contratual.
+
+VALOR = dict(max_digits=20, decimal_places=6)  # preços fracionários (ex.: R$ 0,000125 por requisição)
+
+
+class TaxaCambio(models.Model):
+    """Conversão só com taxa, data e origem registradas: 1 moeda_origem = taxa moeda_destino."""
+    moeda_origem = models.CharField(max_length=3)
+    moeda_destino = models.CharField(max_length=3)
+    taxa = models.DecimalField(**VALOR)
+    data = models.DateField()
+    origem = models.CharField(max_length=200)  # ex.: "PTAX BCB venda 22/10/2026"
+    criado_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-data", "moeda_origem"]
+
+
+class Estimativa(models.Model):
+    """Cada versão é um registro; só a mais nova é editável. Premissas, validade e fonte ficam com a versão."""
+    cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, related_name="estimativas")
+    nome = models.CharField(max_length=200)
+    versao = models.PositiveIntegerField(default=1)
+    anterior = models.ForeignKey("self", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    moeda = models.CharField(max_length=3, default="BRL")
+    validade = models.DateField(null=True, blank=True)
+    fonte = models.CharField(max_length=300, blank=True, default="")
+    premissas = models.TextField(blank=True, default="")
+    criado_por = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+")
+    criado_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["nome", "-versao"]
+
+
+class ItemEstimativa(models.Model):
+    CUSTO, PRECO = "custo", "preco_venda"
+    FIXO, VARIAVEL, AJUSTE = "fixo", "variavel", "ajuste"
+    UNICO, MENSAL = "unico", "mensal"
+    estimativa = models.ForeignKey(Estimativa, on_delete=models.CASCADE, related_name="itens")
+    tipo = models.CharField(max_length=12, default=CUSTO)          # custo ≠ preço de venda
+    natureza = models.CharField(max_length=10, default=VARIAVEL)   # ajuste = imposto/desconto em % sobre a base do grupo
+    recorrencia = models.CharField(max_length=10, default=MENSAL)
+    categoria = models.CharField(max_length=80)
+    descricao = models.CharField(max_length=300, blank=True, default="")
+    quantidade = models.DecimalField(**VALOR, default=1)
+    unidade = models.CharField(max_length=30, blank=True, default="")
+    preco_unitario = models.DecimalField(**VALOR, default=0)
+    moeda = models.CharField(max_length=3, default="BRL")
+    taxa_cambio = models.ForeignKey(TaxaCambio, null=True, blank=True, on_delete=models.PROTECT, related_name="+")
+    percentual = models.DecimalField(max_digits=9, decimal_places=4, null=True, blank=True)  # só em ajuste; negativo = desconto
+    ordem = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["ordem", "id"]
+
+
+class CustoRealizado(models.Model):
+    """Sem cliente = não alocado (compartilhado ou sem mapeamento) até uma regra de rateio do período cobrir."""
+    MANUAL, IMPORTACAO = "manual", "importacao"
+    cliente = models.ForeignKey(Cliente, null=True, blank=True, on_delete=models.PROTECT, related_name="custos_realizados")
+    periodo = models.DateField()  # 1º dia do mês
+    categoria = models.CharField(max_length=80)
+    descricao = models.CharField(max_length=300, blank=True, default="")
+    valor = models.DecimalField(**VALOR)
+    moeda = models.CharField(max_length=3, default="BRL")
+    taxa_cambio = models.ForeignKey(TaxaCambio, null=True, blank=True, on_delete=models.PROTECT, related_name="+")  # moeda ≠ orçamento
+    parcial = models.BooleanField(default=False)  # consumo do mês em curso: nunca apresentado como fatura final
+    origem = models.CharField(max_length=12, default=MANUAL)
+    lote = models.CharField(max_length=80, blank=True, default="")       # nome do arquivo/fornecedor da importação
+    id_externo = models.CharField(max_length=120, null=True, blank=True)  # chave da linha na fonte: reimportar não duplica
+    criado_por = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+")
+    criado_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-periodo", "categoria", "id"]
+        constraints = [models.UniqueConstraint(fields=["lote", "id_externo"], name="vetor_custo_importado_unico")]
+
+
+class RegraRateio(models.Model):
+    """Rateio explícito de custos não alocados de uma categoria num período: partes {cliente_id: percentual}, soma 100."""
+    periodo = models.DateField()
+    categoria = models.CharField(max_length=80)
+    partes = models.JSONField()
+    criado_por = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+")
+    criado_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["periodo", "categoria"], name="vetor_rateio_unico")]
+
+
+class Orcamento(models.Model):
+    cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, related_name="orcamentos")
+    periodo = models.DateField()
+    valor = models.DecimalField(**VALOR)
+    moeda = models.CharField(max_length=3, default="BRL")
+    alerta_percentual = models.DecimalField(max_digits=7, decimal_places=2, default=10)  # desvio acima disto alerta
+    origem = models.CharField(max_length=300, blank=True, default="")  # ex.: "Estimativa Portal v3, custo mensal"
+
+    class Meta:
+        ordering = ["-periodo"]
+        constraints = [models.UniqueConstraint(fields=["cliente", "periodo"], name="vetor_orcamento_unico")]
