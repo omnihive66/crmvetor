@@ -62,7 +62,7 @@ Para a produção, veja `docs/operacao/plano-producao.md`. Para qualquer ambient
 
 | Critério | Resultado | Evidência |
 |---|---|---|
-| CI relevante passa | Ver "CI" abaixo | `.github/workflows/ci.yml` |
+| CI relevante passa | **Atendido:** os três jobs passam no GitHub Actions | `.github/workflows/ci.yml` |
 | Licenças e avisos preservados | **Atendido.** As licenças dos 5 submódulos e os créditos no README foram mantidos, e o código-fonte é acessível (AGPL do front). A licença dos arquivos próprios está pendente. | `docs/operacao/dependencias.md` |
 | Manual do usuário e de operação | **Atendido** | `docs/manual-usuario.md`, `docs/manual-operacao.md` |
 | Restauração demonstrada | **Atendido.** Um backup cifrado foi restaurado num banco isolado em 10 s: 0 erros, nenhuma migração pendente, 13 arquivos de mídia. As contagens são iguais às do banco em uso; a única diferença é a auditoria, que ganhou as 2 linhas dos próprios registros. Não sobrou container nem rede. | `evidencias/10/backup-restauracao.txt` |
@@ -82,10 +82,10 @@ Para a produção, veja `docs/operacao/plano-producao.md`. Para qualquer ambient
 
 ### Testes automáticos
 - `vetor/tests`: **129 passaram** (6 novos).
-- Suíte oficial ampliada: ver `evidencias/10/pytest.txt`.
+- Suíte oficial ampliada (versão final): **1032 passaram, 17 falharam**. As 17 são as mesmas divergências intencionais desde a SPEC-04, sem nenhuma falha nova (`evidencias/10/pytest.txt`).
 
 ### CI
-Ver o resultado da primeira execução no GitHub Actions, registrado abaixo depois do push.
+GitHub Actions verde nos três jobs (testes da Vetor, sintaxe/compose/segredos e build das imagens), na primeira execução e de novo no último commit (execução 39961574158).
 
 ## Problemas encontrados e corrigidos no caminho
 - **Acessibilidade:** a tabela da aba Custos, no celular, rolava sem receber foco pelo teclado. Corrigido em todos os 16 contêineres de tabela das telas.
