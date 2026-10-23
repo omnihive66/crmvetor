@@ -1,6 +1,6 @@
 # Entrega 02 — Identidades e permissões
 
-Data: 22/10/2026 • Spec: `specs/02-usuarios-permissoes.md` • Branch: `spec-02-permissoes`
+Data: 22/10/2026 • Branch: `spec-02-permissoes`
 
 ## O que foi reaproveitado, configurado e desenvolvido
 - **Reaproveitado:** contas, login JWT, recusa de conta inativa em toda requisição, memberships e papéis por projeto com permissões granulares, filtros de listagem, busca por projeto e anexos com token. Tudo isso é nativo do Taiga.

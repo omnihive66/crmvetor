@@ -1,6 +1,6 @@
 # Entrega 05 — Minhas demandas, lembretes e agente
 
-Data: 23/10/2026 • Spec: `specs/05-lembretes-agente.md` • Branch: `spec-05-lembretes` (sobre `spec-04-projetos`)
+Data: 23/10/2026 • Branch: `spec-05-lembretes` (sobre `spec-04-projetos`)
 
 ## O que foi reaproveitado, configurado e desenvolvido
 - **Reaproveitado (nativo):**
@@ -33,7 +33,7 @@ Data: 23/10/2026 • Spec: `specs/05-lembretes-agente.md` • Branch: `spec-05-l
 | `vetor-back/vetor/tests/test_lembretes.py` | 18 testes novos |
 | `vetor-front/minhas-demandas/index.html`, `ui/shell.js`, `ui/shell.css`, `build.py` | tela, item com aviso na barra lateral |
 | `scripts/qa/lembretes.js` | QA pela interface |
-| `docs/agente.md`, `docs/decisoes/0008-lembretes-e-agente.md`, `docs/arquitetura.md`, `RASTREABILIDADE.md` | contrato, decisão, atualizações |
+| `docs/agente.md`, `docs/decisoes/0008-lembretes-e-agente.md`, `docs/arquitetura.md`, `docs/entregas/README.md` | contrato, decisão, atualizações |
 
 **Migração:** `vetor.0006` cria três tabelas próprias (`vetor_lembrete`, `vetor_tokenagente`, `vetor_requisicaoagente`). Nenhuma tabela do Taiga é alterada.
 

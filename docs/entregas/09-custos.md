@@ -1,6 +1,6 @@
 # Entrega 09 — Estimativas e custos realizados
 
-Data: 23/10/2026 • Spec: `specs/09-custos.md` • Branch: `spec-09-custos` (sobre `spec-08-pos-venda`)
+Data: 23/10/2026 • Branch: `spec-09-custos` (sobre `spec-08-pos-venda`)
 
 ## O que foi reaproveitado, configurado e desenvolvido
 - **Reaproveitado:**
@@ -39,7 +39,7 @@ Data: 23/10/2026 • Spec: `specs/09-custos.md` • Branch: `spec-09-custos` (so
 | `vetor-back/vetor/tests/test_custos.py` | 11 testes novos |
 | `vetor-front/clientes/cliente.html`, `vetor-front/custos/index.html`, `ui/shell.js`, `build.py` | aba Custos, página Custos, menu |
 | `scripts/qa/custos.js` | QA pela tela |
-| `docs/integracoes/custos.md`, `docs/decisoes/0012-custos.md`, `docs/arquitetura.md`, `RASTREABILIDADE.md` | regras, CSV, AWS/Oracle e decisão |
+| `docs/integracoes/custos.md`, `docs/decisoes/0012-custos.md`, `docs/arquitetura.md`, `docs/entregas/README.md` | regras, CSV, AWS/Oracle e decisão |
 
 **Migração:** `vetor.0010` cria seis tabelas próprias. Nenhuma tabela do Taiga é alterada.
 

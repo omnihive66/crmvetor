@@ -1,6 +1,6 @@
 # Entrega 03 — Clientes, documentos e reuniões
 
-Data: 22/10/2026 • Spec: `specs/03-clientes-documentos.md` • Branch: `spec-03-clientes` (sobre `spec-02-permissoes`)
+Data: 22/10/2026 • Branch: `spec-03-clientes` (sobre `spec-02-permissoes`)
 
 ## O que foi reaproveitado, configurado e desenvolvido
 - **Reaproveitado:**

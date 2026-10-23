@@ -24,7 +24,7 @@ from .models import Auditoria, Perfil
 
 class UsersViewSet(users_api.UsersViewSet):
     def password_recovery(self, request, pk=None):
-        # Mesma resposta para conta existente ou não: não revela quem tem acesso (DESIGN.md, tela de login).
+        # Mesma resposta para conta existente ou não: não revela quem tem acesso (tela de login).
         try:
             return super().password_recovery(request, pk)
         except exc.WrongArguments:

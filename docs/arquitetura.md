@@ -22,7 +22,6 @@ navegador ──► taiga-gateway (nginx :9000)
 | `scripts/vetor.sh` | subir, parar, `manage.py`, backup e restauração |
 | `scripts/test-backend.sh` | suíte pytest do taiga-back num Postgres descartável |
 | `docs/` | arquitetura, inventário, decisões, entregas e evidências |
-| `specs/`, `DESIGN.md`, `COMANDOS.md`, `RASTREABILIDADE.md` | o pacote de especificação |
 
 | `vetor-front/` | `Dockerfile` + `build.py`: aplica paleta, logos, textos pt-BR e título sobre o build oficial do front (decisão 0003) |
 | `vetor-back/` | `Dockerfile`, `settings/config.py` e o app Django `vetor`: papéis e auditoria (decisão 0006), rotas, traduções e e-mails (decisão 0002) |

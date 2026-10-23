@@ -1,6 +1,6 @@
 # Entrega 06 — Repositórios e desenvolvimento
 
-Data: 23/10/2026 • Spec: `specs/06-git-azure.md` • Branch: `spec-06-github` (sobre `spec-05-lembretes`)
+Data: 23/10/2026 • Branch: `spec-06-github` (sobre `spec-05-lembretes`)
 
 ## O que foi reaproveitado, configurado e desenvolvido
 - **Validado antes de ampliar (nativo):** a integração GitHub do Taiga 6.10 foi testada.
@@ -40,7 +40,7 @@ Data: 23/10/2026 • Spec: `specs/06-git-azure.md` • Branch: `spec-06-github` 
 | `vetor-front/administracao/index.html`, `vetor-front/demandas/index.html` | repositórios, fila de falhas, botão Código |
 | `infra/docker-compose.override.yml`, `.env.example` | variáveis do segredo |
 | `scripts/qa/github.js` | QA com entregas assinadas pelo webhook real e pelo worker |
-| `docs/integracoes/github.md`, `docs/decisoes/0009-github-e-azure.md`, `docs/inventario-taiga.md`, `docs/arquitetura.md`, `RASTREABILIDADE.md` | direção da sincronização, decisão, atualizações |
+| `docs/integracoes/github.md`, `docs/decisoes/0009-github-e-azure.md`, `docs/inventario-taiga.md`, `docs/arquitetura.md`, `docs/entregas/README.md` | direção da sincronização, decisão, atualizações |
 
 **Migração:** `vetor.0007` cria três tabelas próprias. Nenhuma tabela do Taiga é alterada.
 

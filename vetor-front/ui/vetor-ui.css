@@ -1,4 +1,4 @@
-/* Componentes das telas próprias da Vetor Sistemas (tokens do DESIGN.md). Um arquivo para todas as telas. */
+/* Componentes das telas próprias da Vetor Sistemas (tokens da identidade visual). Um arquivo para todas as telas. */
 :root { --brand:#00d47a; --action:#087443; --sidebar:#090d0b; --canvas:#f5f7f6; --surface:#fff; --text:#14221b;
         --muted:#52645a; --border:#dce5df; --field:#7a8b81; --danger:#b42318; --warning:#8a5700; --info:#175cd3; }
 * { box-sizing: border-box; }

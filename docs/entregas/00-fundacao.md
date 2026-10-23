@@ -1,6 +1,6 @@
 # Entrega 00 — Auditoria e fundação
 
-Data: 22/10/2026 • Spec: `specs/00-fundacao.md` • Ambiente: container de desenvolvimento (4 vCPU, 15 GiB, Docker 29.9.1, Compose 5.6.0)
+Data: 22/10/2026 • Ambiente: container de desenvolvimento (4 vCPU, 15 GiB, Docker 29.9.1, Compose 5.6.0)
 
 ## O que foi reaproveitado, configurado e desenvolvido
 - **Reaproveitado:** Taiga oficial completo (API, front, eventos, anexos protegidos, async), imagens oficiais e o compose oficial sem edição.
@@ -17,7 +17,7 @@ Data: 22/10/2026 • Spec: `specs/00-fundacao.md` • Ambiente: container de des
 | `.env.example`, `.gitignore` | novos |
 | `scripts/vetor.sh`, `scripts/test-backend.sh` | novos |
 | `docs/arquitetura.md`, `docs/inventario-taiga.md`, `docs/decisoes/0001…0004` | novos |
-| `specs/`, `README.md`, `DESIGN.md`, `COMANDOS.md`, `RASTREABILIDADE.md`, `assets/logo-vetor-original.jpg` | pacote recebido, versionado sem alteração (exceto `RASTREABILIDADE.md`: seção de estado). `specs/03` foi extraída da ESPECIFICACAO-COMPLETA, porque o arquivo separado não foi enviado. |
+| `README.md`, `assets/logo-vetor-original.jpg` | apresentação do projeto e logo |
 
 **Migrações:** nenhuma própria. As migrações oficiais do Taiga rodam no primeiro `up`.
 
