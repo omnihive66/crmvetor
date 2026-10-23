@@ -48,7 +48,33 @@
     </table>
     <div class="pager" id="pager-pessoas"></div>
   </div>
-  <h2>Auditoria</h2>
+  <h2 style="margin-top:24px">Repositórios (GitHub)</h2>
+  <div class="card">
+    <form id="novo-repo" class="form" novalidate>
+      <label>Projeto<select name="projeto" required><option value="">Escolha…</option></select></label>
+      <label>Repositório (dono/nome)<input type="text" name="nome" required placeholder="vetor/portal" autocomplete="off"></label>
+      <button type="submit">Ligar repositório</button>
+    </form>
+    <p class="muted">No GitHub, em Settings → Webhooks do repositório (ou num GitHub App), use a URL <code id="url-webhook"></code>,
+      tipo <code>application/json</code>, o segredo <code>VETOR_GITHUB_WEBHOOK_SECRET</code> do servidor e os eventos Pull requests, Pushes e Issues.
+      Cite <code>TG-&lt;número&gt;</code> no título do PR, na branch, no commit ou na issue para ligar à demanda. A Vetor só lê: não escreve no GitHub nem guarda token dele.</p>
+    <p id="repo-msg" role="status" aria-live="polite"></p>
+  </div>
+  <div class="card tabela" style="margin-top:16px">
+    <table>
+      <caption>Repositórios ligados a projetos. Quem vê a demanda vê os links; o acesso ao código continua sendo o do GitHub.</caption>
+      <thead><tr><th scope="col">Repositório</th><th scope="col">Projeto</th><th scope="col">Vínculos</th><th scope="col"><span class="muted">Ação</span></th></tr></thead>
+      <tbody id="repos"></tbody>
+    </table>
+  </div>
+  <div class="card tabela" style="margin-top:16px">
+    <table>
+      <caption>Entregas do GitHub com falha. Reprocessar usa o conteúdo guardado da entrega original.</caption>
+      <thead><tr><th scope="col">Recebida</th><th scope="col">Evento</th><th scope="col">Repositório</th><th scope="col">Tentativas</th><th scope="col">Erro</th><th scope="col"><span class="muted">Ação</span></th></tr></thead>
+      <tbody id="falhas"></tbody>
+    </table>
+  </div>
+  <h2 style="margin-top:24px">Auditoria</h2>
   <div class="card tabela">
     <table>
       <caption>Mudanças de acesso, da mais recente para a mais antiga. Horários em America/Sao_Paulo.</caption>
@@ -67,6 +93,7 @@ const ACOES = {
   "usuario.criado": "Conta criada", "usuario.ativado": "Conta reativada", "usuario.desativado": "Conta desativada",
   "membership.criada": "Entrada em projeto", "membership.alterada": "Acesso a projeto alterado", "membership.removida": "Saída de projeto",
   "papel_projeto.permissoes_alteradas": "Permissões de papel do projeto alteradas",
+  "lembrete.convertido": "Lembrete virou demanda", "repositorio.ligado": "Repositório ligado", "repositorio.desligado": "Repositório desligado",
 };
 const quando = new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "medium", timeZone: "America/Sao_Paulo" });
 const main = document.getElementById("conteudo");
@@ -152,6 +179,60 @@ async function carregarAuditoria(pagina = 1) {
   } catch (e) { tbody.replaceChildren(el("tr", {}, el("td", { colspan: 5, class: "erro", text: "Erro ao carregar: " + e.message }))); }
 }
 
+async function carregarRepos() {
+  const tbody = document.getElementById("repos");
+  try {
+    const { corpo } = await chamar("/vetor/repositorios");
+    if (!corpo.length) return tbody.replaceChildren(el("tr", {}, el("td", { colspan: 4, class: "muted", text: "Nenhum repositório ligado." })));
+    tbody.replaceChildren(...corpo.map(r => {
+      const remover = el("button", { type: "button", class: "perigo", text: "Desligar", "aria-label": `Desligar ${r.nome}` });
+      remover.onclick = async () => {
+        if (!confirm(`Desligar ${r.nome} de ${r.projeto.nome}? Os ${r.vinculos} vínculo(s) com demandas somem; nada muda no GitHub.`)) return;
+        await chamar(`/vetor/repositorios/${r.id}`, { method: "DELETE" }); carregarRepos(); carregarAuditoria(1);
+      };
+      return el("tr", {}, el("td", {}, el("a", { href: r.url, rel: "noopener", text: r.nome })), el("td", { text: r.projeto.nome }),
+        el("td", { text: String(r.vinculos) }), el("td", {}, remover));
+    }));
+  } catch (e) { tbody.replaceChildren(el("tr", {}, el("td", { colspan: 4, class: "erro", text: "Erro ao carregar: " + e.message }))); }
+}
+async function carregarFalhas() {
+  const tbody = document.getElementById("falhas");
+  try {
+    const { corpo } = await chamar("/vetor/eventos-github?status=falhou");
+    if (!corpo.length) return tbody.replaceChildren(el("tr", {}, el("td", { colspan: 6, class: "muted", text: "Nenhuma entrega com falha." })));
+    tbody.replaceChildren(...corpo.map(ev => {
+      const msg = el("span", { role: "status", class: "muted" });
+      const botao = el("button", { type: "button", class: "sec", text: "Reprocessar", "aria-label": `Reprocessar a entrega ${ev.entrega}` });
+      const tentativas = el("td", { text: String(ev.tentativas) }), erro = el("td", { class: "detalhes", text: ev.erro });
+      botao.onclick = async () => {
+        botao.disabled = true; msg.textContent = "Reprocessando…";
+        try { const { corpo: r } = await chamar(`/vetor/eventos-github/${ev.id}/reprocessar`, { method: "POST" });
+          tentativas.textContent = String(r.tentativas); erro.textContent = r.erro;
+          msg.className = r.status === "falhou" ? "erro" : "ok"; msg.textContent = r.status === "falhou" ? "Falhou de novo: " + r.erro : "Processada."; if (r.status !== "falhou") setTimeout(carregarFalhas, 1500); }
+        catch (e) { msg.className = "erro"; msg.textContent = e.message; } finally { botao.disabled = false; }
+      };
+      return el("tr", {}, el("td", { text: quando.format(new Date(ev.recebido_em)) }), el("td", { text: ev.evento }), el("td", { text: ev.repositorio || "—" }),
+        tentativas, erro, el("td", {}, botao, " ", msg));
+    }));
+  } catch (e) { tbody.replaceChildren(el("tr", {}, el("td", { colspan: 6, class: "erro", text: "Erro ao carregar: " + e.message }))); }
+}
+async function prepararRepos() {
+  const form = document.getElementById("novo-repo"), msg = document.getElementById("repo-msg");
+  document.getElementById("url-webhook").textContent = new URL(API + "/vetor/github/webhook", location.href).href;
+  try { for (const p of (await chamar("/projects")).corpo) form.projeto.append(el("option", { value: p.id, text: p.name })); } catch (e) { msg.className = "erro"; msg.textContent = "Projetos: " + e.message; }
+  form.onsubmit = async ev => {
+    ev.preventDefault();
+    if (!form.projeto.value || !form.nome.value.trim()) { msg.className = "erro"; msg.textContent = "Escolha o projeto e informe o repositório."; return; }
+    try {
+      const { corpo } = await chamar("/vetor/repositorios", { method: "POST", body: JSON.stringify({ projeto: Number(form.projeto.value), nome: form.nome.value }) });
+      msg.className = "ok"; msg.textContent = `${corpo.nome} ligado a ${corpo.projeto.nome}.`; form.reset(); carregarRepos(); carregarAuditoria(1);
+    } catch (e) {
+      const erros = e.corpo && typeof e.corpo === "object" && !e.corpo._error_message ? e.corpo : null;
+      msg.className = "erro"; msg.textContent = erros ? Object.values(erros).flat().join(" ") : e.message;
+    }
+  };
+}
+
 function prepararFormulario() {
   const form = document.getElementById("nova"), msg = document.getElementById("nova-msg");
   opcoesPapel(form.papel, "observador");
@@ -177,7 +258,7 @@ async function iniciar() {
     const { corpo: me } = await chamar("/vetor/perfis/me");
     if (!me.administrador) return estado("Acesso negado. Esta área é só para administradores da organização.", { erro: true });
     main.replaceChildren(document.getElementById("tpl-painel").content.cloneNode(true));
-    prepararFormulario(); carregarPessoas(1); carregarAuditoria(1);
+    prepararFormulario(); carregarPessoas(1); carregarAuditoria(1); prepararRepos(); carregarRepos(); carregarFalhas();
   } catch (e) { falha(e, iniciar); }
 }
 iniciar();

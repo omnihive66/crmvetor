@@ -20,6 +20,9 @@ def aplicar(s):
     s["CELERY_BEAT_SCHEDULE"] = {**s.get("CELERY_BEAT_SCHEDULE", {}),
                                  "vetor-lembretes": {"task": "vetor.tasks.avisar_lembretes", "schedule": 60.0}}
     s["VETOR_AGENTE_LIMITE_MINUTO"] = int(os.getenv("VETOR_AGENTE_LIMITE_MINUTO", "30"))
+    # GitHub (SPEC-06): só o segredo do webhook. O _ANTERIOR continua valendo durante a troca (rotação).
+    s["VETOR_GITHUB_WEBHOOK_SEGREDOS"] = [v for v in (os.getenv("VETOR_GITHUB_WEBHOOK_SECRET", ""),
+                                                      os.getenv("VETOR_GITHUB_WEBHOOK_SECRET_ANTERIOR", "")) if v]
     # O Taiga desliga loggers não declarados: sem isto, vetor.agente e vetor.lembretes não aparecem (só ids, nunca conteúdo).
     s["LOGGING"]["loggers"]["vetor"] = {"handlers": ["console"], "level": "INFO", "propagate": False}
     # Nome do sistema financeiro/contratual externo ainda não confirmado (README): fica configurável.

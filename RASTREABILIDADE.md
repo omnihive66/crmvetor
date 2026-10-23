@@ -36,4 +36,5 @@ Essas respostas bloqueiam apenas a parte técnica dependente; não justificam si
 | 03 — Clientes, documentos e reuniões | Concluída: CRM com escopo de acesso, documentos privados, reuniões que viram demanda, busca global e barra lateral. Pendentes: antivírus, retenção e nome do sistema financeiro | `docs/entregas/03-clientes-documentos.md` |
 | 04 — Projetos, fases e colaboração | Concluída: modelo de fluxo Vetor, participação por etapa, Demandas com filtros e alternativa por teclado ao arrastar | `docs/entregas/04-projetos-workflow.md` |
 | 05 — Minhas demandas, lembretes e agente | Concluída com pendência: lembretes privados com aviso no fuso de Brasília, conversão com prévia e sem duplicar, tokens pessoais por escopo e contrato HTTP do agente. Pendente: conectar o agente real (tecnologia não informada) | `docs/entregas/05-lembretes-agente.md`, `docs/agente.md` |
-| 06 a 10 | Não iniciadas | — |
+| 06 — Repositórios e desenvolvimento | Concluída com pendência: conector GitHub só de leitura (webhook assinado, deduplicado, assíncrono, com fila de falhas) que liga PRs, commits e issues às demandas. Pendente: Azure (serviço não definido) e CI/CD (integração separada) | `docs/entregas/06-git-azure.md`, `docs/integracoes/github.md` |
+| 07 a 10 | Não iniciadas | — |

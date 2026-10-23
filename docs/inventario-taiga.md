@@ -64,6 +64,8 @@ Digests completos em `infra/docker-compose.override.yml`. Base do backend: Pytho
 ### Integração GitHub nativa (base da SPEC-06)
 `taiga.hooks.github`: recebe `push`, `issues` e `issue_comment`. Valida `X-Hub-Signature` (**HMAC-SHA1**, o cabeçalho legado do GitHub; não valida `X-Hub-Signature-256`). O push muda status por mensagem de commit (`TG-<ref> #<status>`). Issue do GitHub vira issue no Taiga. **Não trata pull requests**, não deduplica por `X-GitHub-Delivery` e processa de forma síncrona. Segredo por projeto fica em `modules_config`.
 
+**Validado na SPEC-06** (`vetor/tests/test_github.py::test_nativo_…`): sem assinatura dá 400; a mesma entrega de `issues` reenviada cria **duas** issues no Taiga; `pull_request` é aceito e ignorado. Por isso a Vetor tem um conector próprio para vínculos de código (decisão 0009). O nativo continua disponível, restrito ao Administrador (SPEC-02).
+
 ## Tarefas assíncronas, eventos e e-mail
 Celery com serializer `pickle` (padrão do upstream; risco aceitável só porque o broker é interno). Fuso do Celery ajustado para `America/Sao_Paulo`; banco em UTC (`USE_TZ=True`, `TIME_ZONE="UTC"`). E-mail em modo `console` no desenvolvimento.
 
