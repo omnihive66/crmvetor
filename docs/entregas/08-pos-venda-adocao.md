@@ -70,7 +70,7 @@ Nenhuma para o painel. Para adoção, o produto do cliente precisa enviar evento
 
 ### Testes automáticos
 - `vetor/tests`: **112 passaram** (9 novos).
-- Suíte oficial ampliada: ver `evidencias/08/pytest.txt`.
+- Suíte oficial ampliada: **1015 passaram, 17 falharam**. As 17 são as mesmas divergências intencionais da SPEC-07, comparadas linha a linha, sem nenhuma falha nova (`evidencias/08/pytest.txt`).
 
 ## Problemas encontrados e corrigidos no caminho
 - **Queda × CPU misturadas:** o bloco Disponibilidade mostrava "Fora do ar agora" para um servidor que só tinha CPU alta, porque reaproveitava a situação genérica da tela de Monitoramento. A QA pegou. Agora o bloco considera só quedas; teste com memória alta em outro servidor.
