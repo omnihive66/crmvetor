@@ -27,6 +27,8 @@
 
 <template id="tpl-painel">
   <h1 style="margin-bottom:16px">Administração</h1>
+  <h2>Saúde operacional</h2>
+  <div class="card" id="saude"><p class="muted" role="status">Carregando…</p></div>
   <h2>Pessoas</h2>
   <div class="card">
     <form id="nova" class="form" novalidate>
@@ -39,7 +41,7 @@
     <p class="muted">A pessoa recebe um e-mail para definir a própria senha. Ninguém além dela conhece a senha.</p>
     <p id="nova-msg" role="status" aria-live="polite"></p>
   </div>
-  <div class="card tabela" style="margin-top:16px">
+  <div class="card tabela" tabindex="0" style="margin-top:16px">
     <table>
       <caption>Papel na organização e acesso. O financeiro é fechado para o usuário matriz, definido no servidor (não se libera por aqui). O acesso a cada projeto continua sendo definido no próprio projeto, limitado pelo papel.</caption>
       <thead><tr><th scope="col">Nome</th><th scope="col">Usuário</th><th scope="col">E-mail</th><th scope="col">Papel</th><th scope="col">Financeiro</th><th scope="col">Ativo</th><th scope="col"><span class="muted">Ação</span></th></tr></thead>
@@ -59,14 +61,14 @@
       Cite <code>TG-&lt;número&gt;</code> no título do PR, na branch, no commit ou na issue para ligar à demanda. A Vetor só lê: não escreve no GitHub nem guarda token dele.</p>
     <p id="repo-msg" role="status" aria-live="polite"></p>
   </div>
-  <div class="card tabela" style="margin-top:16px">
+  <div class="card tabela" tabindex="0" style="margin-top:16px">
     <table>
       <caption>Repositórios ligados a projetos. Quem vê a demanda vê os links; o acesso ao código continua sendo o do GitHub.</caption>
       <thead><tr><th scope="col">Repositório</th><th scope="col">Projeto</th><th scope="col">Vínculos</th><th scope="col"><span class="muted">Ação</span></th></tr></thead>
       <tbody id="repos"></tbody>
     </table>
   </div>
-  <div class="card tabela" style="margin-top:16px">
+  <div class="card tabela" tabindex="0" style="margin-top:16px">
     <table>
       <caption>Entregas do GitHub com falha. Reprocessar usa o conteúdo guardado da entrega original.</caption>
       <thead><tr><th scope="col">Recebida</th><th scope="col">Evento</th><th scope="col">Repositório</th><th scope="col">Tentativas</th><th scope="col">Erro</th><th scope="col"><span class="muted">Ação</span></th></tr></thead>
@@ -74,7 +76,7 @@
     </table>
   </div>
   <h2 style="margin-top:24px">Auditoria</h2>
-  <div class="card tabela">
+  <div class="card tabela" tabindex="0">
     <table>
       <caption>Mudanças de acesso, da mais recente para a mais antiga. Horários em America/Sao_Paulo.</caption>
       <thead><tr><th scope="col">Quando</th><th scope="col">Quem</th><th scope="col">Ação</th><th scope="col">Alvo</th><th scope="col">Detalhes</th></tr></thead>
@@ -231,6 +233,27 @@ async function prepararRepos() {
   };
 }
 
+const ESTADO_CONECTOR = { configurado: "configurado", nao_configurado: "não configurado", contrato_disponivel: "contrato pronto, sem integração ativa",
+  fechado_para_todos: "fechado para todos", nao_implementado: "não implementado", nao_definido: "não definido" };
+async function carregarSaude() {
+  const alvo = document.getElementById("saude");
+  try {
+    const { corpo: s } = await chamar("/vetor/saude");
+    const quandoOu = (x, vazio) => x ? quando.format(new Date(x.feito_em)) + (x.resultado === "ok" ? "" : " (falhou)") : vazio;
+    alvo.replaceChildren(
+      s.alertas.length ? el("ul", { class: "lista-simples" }, ...s.alertas.map(a => el("li", { class: "erro", text: a.texto })))
+        : el("p", { class: "ok", text: "Nenhum alerta." }),
+      el("p", { class: "muted", text: `Worker: ${s.filas.worker} · GitHub com falha: ${s.filas.github_falhas} · Monitoramento com falha: ${s.filas.monitoramento_falhas} · ` +
+        `E-mail: ${s.email.configurado ? "configurado" : "não configurado"} (${s.email.falhas_24h} falha(s) em 24 h)` }),
+      el("p", { class: "muted", text: `Último backup: ${quandoOu(s.backup, "nenhum")}${s.backup ? (s.backup.cifrado ? " · cifrado" : " · SEM cifra") : ""} · ` +
+        `Última restauração isolada: ${quandoOu(s.restauracao_teste, "nunca testada")}` }),
+      el("div", { class: "tabela", tabindex: "0" }, el("table", {}, el("caption", { text: "Conectores: sem credencial aparece como não configurado, nunca como ativo." }),
+        el("thead", {}, el("tr", {}, el("th", { scope: "col", text: "Conector" }), el("th", { scope: "col", text: "Estado" }), el("th", { scope: "col", text: "Detalhe" }))),
+        el("tbody", {}, ...s.conectores.map(c => el("tr", {}, el("td", { text: c.nome }),
+          el("td", {}, el("span", { class: "tag", text: ESTADO_CONECTOR[c.estado] || c.estado })), el("td", { class: "muted", text: c.detalhe || "" })))))));
+  } catch (e) { alvo.replaceChildren(el("p", { class: "erro", text: "Erro ao carregar: " + e.message })); }
+}
+
 function prepararFormulario() {
   const form = document.getElementById("nova"), msg = document.getElementById("nova-msg");
   opcoesPapel(form.papel, "observador");
@@ -256,7 +279,7 @@ async function iniciar() {
     const { corpo: me } = await chamar("/vetor/perfis/me");
     if (!me.administrador) return estado("Acesso negado. Esta área é só para administradores da organização.", { erro: true });
     main.replaceChildren(document.getElementById("tpl-painel").content.cloneNode(true));
-    prepararFormulario(); carregarPessoas(1); carregarAuditoria(1); prepararRepos(); carregarRepos(); carregarFalhas();
+    carregarSaude(); prepararFormulario(); carregarPessoas(1); carregarAuditoria(1); prepararRepos(); carregarRepos(); carregarFalhas();
   } catch (e) { falha(e, iniciar); }
 }
 iniciar();

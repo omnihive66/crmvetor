@@ -9,6 +9,7 @@ router = routers.DefaultRouter(trailing_slash=False)
 router.include_root_view = False  # a raiz /api/v1/ continua sendo a do Taiga
 router.register(r"vetor/perfis", api.PerfilViewSet, base_name="vetor-perfis")
 router.register(r"vetor/auditoria", api.AuditoriaViewSet, base_name="vetor-auditoria")
+router.register(r"vetor/saude", api.SaudeViewSet, base_name="vetor-saude")
 router.register(r"vetor/clientes", api_clientes.ClienteViewSet, base_name="vetor-clientes")
 router.register(r"vetor/contatos", api_clientes.ContatoViewSet, base_name="vetor-contatos")
 router.register(r"vetor/documentos", api_clientes.DocumentoViewSet, base_name="vetor-documentos")

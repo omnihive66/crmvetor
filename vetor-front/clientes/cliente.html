@@ -266,9 +266,9 @@ async function verEstimativa(alvo, id, p) {
   alvo.replaceChildren(
     el("p", { class: "vt-meta", text: `Moeda ${e.moeda} · validade ${diaData(e.validade) || "—"} · fonte: ${e.fonte || "—"}` }),
     e.premissas ? el("p", { class: "pre", text: `Premissas: ${e.premissas}` }) : "",
-    el("div", { class: "tabela" }, el("table", {}, el("caption", { class: "sr", text: "Itens da estimativa" }),
+    el("div", { class: "tabela", tabindex: "0" }, el("table", {}, el("caption", { class: "sr", text: "Itens da estimativa" }),
       el("thead", {}, el("tr", {}, ...["Grupo", "Natureza", "Item", "Cálculo", "Valor", ""].map(x => el("th", { scope: "col", text: x })))), el("tbody", {}, ...linhas))),
-    el("div", { class: "tabela" }, el("table", {}, el("caption", { text: "Totais por grupo (fixo + variável = antes de ajustes; ajustes incidem só sobre essa base)" }),
+    el("div", { class: "tabela", tabindex: "0" }, el("table", {}, el("caption", { text: "Totais por grupo (fixo + variável = antes de ajustes; ajustes incidem só sobre essa base)" }),
       el("thead", {}, el("tr", {}, ...["Grupo", "Fixo", "Variável", "Antes de ajustes", "Ajustes", "Total"].map(x => el("th", { scope: "col", text: x })))),
       el("tbody", {}, ...t.grupos.map(g => el("tr", {}, el("td", { text: `${NOMES_GRUPO[g.tipo]} ${NOMES_GRUPO[g.recorrencia]}` }),
         ...[g.fixo, g.variavel, g.antes_de_ajustes, g.ajustes, g.total].map(v => el("td", { text: brl(v, t.moeda) }))))))),
@@ -335,7 +335,7 @@ async function contatos(p) {
     el("td", {}, c.email ? el("a", { href: `mailto:${c.email}`, text: c.email }) : "—"),
     el("td", {}, editar() ? el("button", { type: "button", class: "perigo", text: "Remover", "aria-label": `Remover contato ${c.nome}`,
       onclick: async () => { if (!confirmar(`Remover o contato ${c.nome}?`)) return; try { await chamar(`/vetor/contatos/${c.id}`, { method: "DELETE" }); contatos(p); } catch (e) { msgErro(msg, e); } } }) : null)));
-  const tab = lista.length ? el("div", { class: "tabela" }, el("table", {}, el("thead", {}, el("tr", {}, ...["Nome", "Função", "Telefone", "E-mail", ""].map(t => el("th", { scope: "col", text: t })))), el("tbody", {}, ...linhas)))
+  const tab = lista.length ? el("div", { class: "tabela", tabindex: "0" }, el("table", {}, el("thead", {}, el("tr", {}, ...["Nome", "Função", "Telefone", "E-mail", ""].map(t => el("th", { scope: "col", text: t })))), el("tbody", {}, ...linhas)))
     : vazio("Nenhum contato cadastrado.");
   let form = null;
   if (editar()) {

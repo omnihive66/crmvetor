@@ -93,7 +93,7 @@ async function verEtapas(d) {
   try {
     const lista = (await chamar(`/vetor/participacoes?historia=${d.id}`)).corpo;
     const q = Vetor.quando;
-    alvo.replaceChildren(el("p", { text: `#${d.ref} ${d.assunto}` }), lista.length ? el("div", { class: "tabela" }, el("table", {},
+    alvo.replaceChildren(el("p", { text: `#${d.ref} ${d.assunto}` }), lista.length ? el("div", { class: "tabela", tabindex: "0" }, el("table", {},
       el("thead", {}, el("tr", {}, ...["Pessoa", "Etapa", "Início", "Fim"].map(t => el("th", { scope: "col", text: t })))),
       el("tbody", {}, ...lista.map(p => el("tr", {}, el("td", { text: p.usuario_nome }), el("td", { text: p.etapa }),
         el("td", { text: `${q.format(new Date(p.inicio))} · ${p.autor_inicio}` }),
@@ -151,7 +151,7 @@ async function carregar() {
       lista.replaceChildren(el("div", { class: "card estado" }, el("p", { text: "Nenhuma demanda com esses filtros." }),
         el("button", { type: "button", class: "sec", text: "Limpar filtros", onclick: () => { document.getElementById("filtros").reset(); aoFiltrar(); } })));
     } else {
-      lista.replaceChildren(el("div", { class: "card tabela" }, el("table", {}, el("caption", { class: "sr", text: "Demandas" }),
+      lista.replaceChildren(el("div", { class: "card tabela", tabindex: "0" }, el("table", {}, el("caption", { class: "sr", text: "Demandas" }),
         el("thead", {}, el("tr", {}, ...["Demanda", "Cliente", "Projeto", "Etapa", "Responsáveis", "Prazo", "Mover para", ""].map(t => el("th", { scope: "col", text: t })))),
         el("tbody", {}, ...await Promise.all(corpo.map(linha))))));
     }

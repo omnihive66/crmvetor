@@ -445,3 +445,25 @@ class Orcamento(models.Model):
     class Meta:
         ordering = ["-periodo"]
         constraints = [models.UniqueConstraint(fields=["cliente", "periodo"], name="vetor_orcamento_unico")]
+
+
+# Operação (SPEC-10) -------------------------------------------------------------------------
+
+class BackupRegistro(models.Model):
+    """Gravado pelo ./scripts/vetor.sh: cada backup e cada restauração de teste isolada, para o painel de saúde."""
+    BACKUP, RESTAURACAO = "backup", "restauracao_teste"
+    tipo = models.CharField(max_length=20)
+    local = models.CharField(max_length=300)
+    resultado = models.CharField(max_length=10)  # ok, falhou
+    cifrado = models.BooleanField(default=False)
+    detalhes = models.JSONField(default=dict)  # tamanhos, contagens, duração; nunca segredos
+    feito_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-feito_em"]
+
+
+class AvisoOperacional(models.Model):
+    """Último e-mail de alerta por código: no máximo um por dia para o mesmo problema."""
+    codigo = models.CharField(max_length=60, unique=True)
+    enviado_em = models.DateTimeField()

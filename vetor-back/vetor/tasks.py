@@ -34,3 +34,9 @@ def limpar_monitoramento():
 def limpar_uso():
     from . import operacao
     return operacao.limpar_uso()
+
+
+@app.task(name="vetor.tasks.avisos_operacao")
+def avisos_operacao():
+    from . import saude
+    return [a["codigo"] for a in saude.avisar()]

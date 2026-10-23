@@ -1,0 +1,61 @@
+# CI da Vetor Sistemas (SPEC-10). Ações fixadas por commit (cadeia de suprimento); imagens já fixadas por digest no repositório.
+name: CI
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+
+jobs:
+  testes:
+    name: Testes da Vetor (pytest contra o taiga-back oficial)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
+        with: {submodules: true}
+      - run: ./scripts/test-backend.sh --ds=vetor.tests.settings -p no:warnings vetor/tests
+
+  verificacoes:
+    name: Sintaxe, compose e segredos
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
+        with: {submodules: true}
+      - name: Scripts shell
+        run: for f in scripts/*.sh; do bash -n "$f"; done
+      - name: JavaScript das telas e da barra lateral
+        run: |
+          set -e
+          node --check vetor-front/ui/shell.js
+          for f in vetor-front/*/*.html; do
+            python3 -c "import re,sys; m=re.search(r'<script>\n(.*)</script>', open(sys.argv[1]).read(), re.S); open('/tmp/t.js','w').write(m.group(1) if m else '')" "$f"
+            node --check /tmp/t.js || { echo "erro de sintaxe em $f"; exit 1; }
+          done
+          for f in scripts/qa/*.js; do node --check "$f"; done
+      - name: Python do app vetor
+        run: python3 -m py_compile $(find vetor-back -name '*.py')
+      - name: Compose válido
+        run: |
+          ./scripts/vetor.sh init-env
+          docker compose --env-file .env -p vetor -f upstream/taiga-docker/docker-compose.yml \
+            -f upstream/taiga-docker/docker-compose-inits.yml -f infra/docker-compose.override.yml config -q
+      - name: Nenhum segredo versionado
+        run: |
+          # "! cmd" não derruba o job com bash -e; por isso o if explícito.
+          if git ls-files | grep -E '(^|/)\.env$|\.key$|\.pem$'; then echo "arquivo de segredo versionado"; exit 1; fi
+          if git grep -nE 'vtag_[A-Za-z0-9_-]{30,}|vtpr_[A-Za-z0-9_-]{30,}|-----BEGIN [A-Z ]*PRIVATE KEY-----'; then echo "token/chave no código"; exit 1; fi
+
+  imagens:
+    name: Build das imagens derivadas
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
+        with: {submodules: true}
+      - run: |
+          ./scripts/vetor.sh init-env
+          docker compose --env-file .env -p vetor -f upstream/taiga-docker/docker-compose.yml \
+            -f upstream/taiga-docker/docker-compose-inits.yml -f infra/docker-compose.override.yml \
+            build taiga-back taiga-front taiga-events taiga-protected

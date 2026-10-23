@@ -117,7 +117,7 @@ async function carregarTarefas() {
   try {
     const eu = (await chamar("/users/me")).corpo;
     const lista = (await chamar(`/vetor/demandas?responsavel=${eu.id}`)).corpo;
-    alvo.replaceChildren(lista.length ? el("div", { class: "card tabela" }, el("table", {}, el("caption", { class: "sr", text: "Tarefas compartilhadas comigo" }),
+    alvo.replaceChildren(lista.length ? el("div", { class: "card tabela", tabindex: "0" }, el("table", {}, el("caption", { class: "sr", text: "Tarefas compartilhadas comigo" }),
       el("thead", {}, el("tr", {}, ...["Demanda", "Projeto", "Etapa", "Prazo"].map(t => el("th", { scope: "col", text: t })))),
       el("tbody", {}, ...lista.map(d => el("tr", {},
         el("td", {}, el("a", { href: `${RAIZ}project/${d.projeto.slug}/us/${d.ref}`, text: `#${d.ref} ${d.assunto}` }),
@@ -148,7 +148,7 @@ async function carregarLembretes() {
     const lista = (await chamar(`/vetor/lembretes?estado=${estado}`)).corpo;
     if (!lista.length) return alvo.replaceChildren(el("div", { class: "card estado" }, el("p", { text: "Nenhum lembrete aqui." }),
       el("button", { type: "button", class: "sec", text: "Criar lembrete", onclick: () => abrirLembrete() })));
-    alvo.replaceChildren(el("div", { class: "card tabela" }, el("table", {}, el("caption", { class: "sr", text: "Meus lembretes privados" }),
+    alvo.replaceChildren(el("div", { class: "card tabela", tabindex: "0" }, el("table", {}, el("caption", { class: "sr", text: "Meus lembretes privados" }),
       el("thead", {}, el("tr", {}, ...["Lembrete", "Vence", "Referências", "Estado", "Ações"].map(t => el("th", { scope: "col", text: t })))),
       el("tbody", {}, ...lista.map(l => {
         const msg = el("span", { role: "status" });
