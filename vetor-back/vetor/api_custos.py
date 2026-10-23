@@ -1,4 +1,4 @@
-"""API de custos (SPEC-09). Uma trava só: toda rota daqui exige Perfil.ver_custos, inclusive listagem e exportação."""
+"""API de custos (SPEC-09). Uma trava só: toda rota daqui é do usuário matriz (VETOR_FINANCEIRO_USUARIOS), inclusive exportação."""
 import csv
 import io
 
@@ -13,15 +13,12 @@ from taiga.base.decorators import detail_route, list_route
 from taiga.base.fields import Field, MethodField
 
 from . import clientes as regras
-from . import custos
+from . import custos, permissoes
 from .api_clientes import BaseVetor, _autenticado, _texto
 from .auditoria import registrar
 from .models import CustoRealizado, Estimativa, ItemEstimativa, Orcamento, RegraRateio, TaxaCambio
 
 
-def pode_ver_custos(user):
-    perfil = getattr(user, "vetor_perfil", None) if user.is_authenticated else None
-    return bool(perfil and perfil.ver_custos)
 
 
 class Texto(Field):
@@ -36,12 +33,8 @@ class BaseCustos(BaseVetor):
     def initial(self, request, *args, **kwargs):
         super().initial(request, *args, **kwargs)
         _autenticado(request)
-        if not pode_ver_custos(request.user):
-            raise exc.PermissionDenied("Sem permissão financeira: peça ao Administrador a opção “Ver custos”.")
-
-    def exigir_escrita(self):
-        if not regras.pode_criar_cliente(self.request.user):  # gestor ou administrador (com ver_custos)
-            raise exc.PermissionDenied("Só gestores e administradores alteram custos.")
+        if not permissoes.financeiro(request.user):  # consulta e alteração: só o usuário matriz
+            raise exc.PermissionDenied("O financeiro é restrito ao usuário matriz.")
 
     def cliente(self, cid):
         c = regras.clientes_visiveis(self.request.user).filter(pk=cid).first() if str(cid or "").isdigit() else None
@@ -85,7 +78,6 @@ class TaxaViewSet(BaseCustos):
         return TaxaCambio.objects.all()
 
     def create(self, request, **kwargs):
-        self.exigir_escrita()
         taxa = custos.decimal(request.DATA.get("taxa"), "taxa")
         quando = parse_date(str(request.DATA.get("data") or ""))
         if taxa <= 0 or quando is None:
@@ -194,14 +186,12 @@ class EstimativaViewSet(BaseCustos):
         return dados
 
     def create(self, request, **kwargs):
-        self.exigir_escrita()
         est = Estimativa.objects.create(cliente=self.cliente(request.DATA.get("cliente")), criado_por=request.user,
                                         **{"nome": _texto(request.DATA, "nome", 200, obrigatorio=True), **self._cabecalho(request.DATA)})
         registrar("estimativa.criada", est, cliente=est.cliente_id, versao=est.versao)
         return response.Created(self.get_serializer(est).data)
 
     def partial_update(self, request, pk=None, **kwargs):
-        self.exigir_escrita()
         est = self.objeto(pk)
         self._ultima(est)
         dados = self._cabecalho(request.DATA)
@@ -212,7 +202,6 @@ class EstimativaViewSet(BaseCustos):
     @detail_route(methods=["POST"])
     def nova_versao(self, request, pk=None):
         """Congela a versão atual e copia cabeçalho e itens para a próxima (o histórico fica consultável)."""
-        self.exigir_escrita()
         with transaction.atomic():
             est = Estimativa.objects.select_for_update().get(pk=self.objeto(pk).pk)
             self._ultima(est)
@@ -226,7 +215,6 @@ class EstimativaViewSet(BaseCustos):
 
     @detail_route(methods=["POST"])
     def itens(self, request, pk=None):
-        self.exigir_escrita()
         est = self.objeto(pk)
         self._ultima(est)
         item = ItemEstimativa.objects.create(estimativa=est, ordem=est.itens.count(), **_validar_item(request.DATA))
@@ -245,7 +233,6 @@ class ItemViewSet(BaseCustos):
             raise exc.WrongArguments({"versao": ["Versão substituída: edite a mais nova."]})
 
     def partial_update(self, request, pk=None, **kwargs):
-        self.exigir_escrita()
         item = self.objeto(pk)
         self._editavel(item)
         dados = _validar_item(request.DATA, item)
@@ -256,7 +243,6 @@ class ItemViewSet(BaseCustos):
         return response.Ok(ItemSerializer(item).data)
 
     def destroy(self, request, pk=None, **kwargs):
-        self.exigir_escrita()
         item = self.objeto(pk)
         self._editavel(item)
         registrar("estimativa.item_removido", item.estimativa, item=item.id, categoria=item.categoria)
@@ -315,13 +301,11 @@ class CustoViewSet(BaseCustos):
         return dados
 
     def create(self, request, **kwargs):
-        self.exigir_escrita()
         c = CustoRealizado.objects.create(criado_por=request.user, **self._validar(request.DATA))
         registrar("custo_realizado.criado", c, cliente=c.cliente_id, periodo=str(c.periodo))
         return response.Created(self.get_serializer(c).data)
 
     def partial_update(self, request, pk=None, **kwargs):
-        self.exigir_escrita()
         c = self.objeto(pk)
         dados = self._validar(request.DATA, c)
         for k, v in dados.items():
@@ -331,7 +315,6 @@ class CustoViewSet(BaseCustos):
         return response.Ok(self.get_serializer(c).data)
 
     def destroy(self, request, pk=None, **kwargs):
-        self.exigir_escrita()
         c = self.objeto(pk)
         registrar("custo_realizado.removido", c, cliente=c.cliente_id, periodo=str(c.periodo), categoria=c.categoria, origem=c.origem)
         c.delete()
@@ -347,7 +330,6 @@ class CustoViewSet(BaseCustos):
     @list_route(methods=["POST"])
     def importar(self, request, **kwargs):
         """CSV id;periodo;categoria;descricao;valor;moeda;cliente;parcial. Mesmo lote + id não duplica."""
-        self.exigir_escrita()
         lote = _texto(request.DATA, "lote", 80, obrigatorio=True)
         arquivo = request.FILES.get("arquivo")
         if arquivo is None:
@@ -396,7 +378,6 @@ class RateioViewSet(BaseCustos):
 
     def create(self, request, **kwargs):
         """Cria ou substitui a regra da categoria no mês."""
-        self.exigir_escrita()
         mes, categoria = custos.periodo(request.DATA.get("periodo")), _texto(request.DATA, "categoria", 80, obrigatorio=True)
         regra, criada = RegraRateio.objects.update_or_create(periodo=mes, categoria=categoria,
                                                             defaults={"partes": custos.validar_partes(request.DATA.get("partes")), "criado_por": request.user})
@@ -404,7 +385,6 @@ class RateioViewSet(BaseCustos):
         return response.Created(self.get_serializer(regra).data)
 
     def destroy(self, request, pk=None, **kwargs):
-        self.exigir_escrita()
         regra = self.objeto(pk)
         registrar("rateio.removido", regra, periodo=str(regra.periodo), categoria=regra.categoria)
         regra.delete()
@@ -431,7 +411,6 @@ class OrcamentoViewSet(BaseCustos):
 
     def create(self, request, **kwargs):
         """Cria ou substitui o orçamento do cliente no mês."""
-        self.exigir_escrita()
         cliente, mes = self.cliente(request.DATA.get("cliente")), custos.periodo(request.DATA.get("periodo"))
         valor = custos.decimal(request.DATA.get("valor"), "valor")
         if valor < 0:
@@ -444,7 +423,6 @@ class OrcamentoViewSet(BaseCustos):
         return response.Created(self.get_serializer(orc).data)
 
     def destroy(self, request, pk=None, **kwargs):
-        self.exigir_escrita()
         orc = self.objeto(pk)
         registrar("orcamento.removido", orc, cliente=orc.cliente_id, periodo=str(orc.periodo))
         orc.delete()

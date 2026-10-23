@@ -11,7 +11,7 @@ class Perfil(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, primary_key=True, on_delete=models.CASCADE,
                                 related_name="vetor_perfil")
     papel = models.CharField(max_length=20, choices=PAPEIS, default=OBSERVADOR)
-    ver_custos = models.BooleanField(default=False)  # permissão explícita (SPEC-02), para qualquer papel
+    ver_custos = models.BooleanField(default=False)  # sem efeito desde a SPEC-09: financeiro é só do usuário matriz (VETOR_FINANCEIRO_USUARIOS)
     atualizado_em = models.DateTimeField(auto_now=True)
 
 
@@ -343,7 +343,7 @@ class EventoUso(models.Model):
         indexes = [models.Index(fields=["produto", "tipo", "ocorrido_em"])]
 
 
-# Custos (SPEC-09): só quem tem Perfil.ver_custos lê ou escreve. O sistema financeiro externo segue como fonte contratual.
+# Custos (SPEC-09): só o usuário matriz (VETOR_FINANCEIRO_USUARIOS) lê ou escreve. O sistema financeiro externo segue como fonte contratual.
 
 VALOR = dict(max_digits=20, decimal_places=6)  # preços fracionários (ex.: R$ 0,000125 por requisição)
 

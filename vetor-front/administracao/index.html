@@ -34,7 +34,6 @@
       <label>Usuário<input type="text" name="username" required autocomplete="off"></label>
       <label>E-mail<input type="email" name="email" required autocomplete="off"></label>
       <label>Papel<select name="papel"></select></label>
-      <label class="check"><input type="checkbox" name="ver_custos"> Ver custos</label>
       <button type="submit">Criar conta</button>
     </form>
     <p class="muted">A pessoa recebe um e-mail para definir a própria senha. Ninguém além dela conhece a senha.</p>
@@ -42,8 +41,8 @@
   </div>
   <div class="card tabela" style="margin-top:16px">
     <table>
-      <caption>Papel na organização, permissão de custos e acesso. O acesso a cada projeto continua sendo definido no próprio projeto, limitado pelo papel.</caption>
-      <thead><tr><th scope="col">Nome</th><th scope="col">Usuário</th><th scope="col">E-mail</th><th scope="col">Papel</th><th scope="col">Ver custos</th><th scope="col">Ativo</th><th scope="col"><span class="muted">Ação</span></th></tr></thead>
+      <caption>Papel na organização e acesso. O financeiro é fechado para o usuário matriz, definido no servidor (não se libera por aqui). O acesso a cada projeto continua sendo definido no próprio projeto, limitado pelo papel.</caption>
+      <thead><tr><th scope="col">Nome</th><th scope="col">Usuário</th><th scope="col">E-mail</th><th scope="col">Papel</th><th scope="col">Financeiro</th><th scope="col">Ativo</th><th scope="col"><span class="muted">Ação</span></th></tr></thead>
       <tbody id="pessoas"></tbody>
     </table>
     <div class="pager" id="pager-pessoas"></div>
@@ -143,26 +142,25 @@ async function carregarPessoas(pagina = 1) {
 }
 function linhaPessoa(p) {
   const papel = el("select", { "aria-label": `Papel de ${p.full_name || p.username}` }); opcoesPapel(papel, p.papel);
-  const custos = el("input", { type: "checkbox", "aria-label": `${p.full_name || p.username} pode ver custos` }); custos.checked = p.ver_custos;
   const ativo = el("input", { type: "checkbox", "aria-label": `Conta de ${p.full_name || p.username} ativa` }); ativo.checked = p.is_active;
   const salvar = el("button", { type: "button", text: "Salvar" }); salvar.disabled = true;
   const msg = el("span", { role: "status", "aria-live": "polite", class: "muted" });
-  const mudou = () => { salvar.disabled = papel.value === p.papel && custos.checked === p.ver_custos && ativo.checked === p.is_active; msg.textContent = ""; };
-  [papel, custos, ativo].forEach(c => c.addEventListener("change", mudou));
+  const mudou = () => { salvar.disabled = papel.value === p.papel && ativo.checked === p.is_active; msg.textContent = ""; };
+  [papel, ativo].forEach(c => c.addEventListener("change", mudou));
   salvar.onclick = async () => {
     salvar.disabled = true; msg.className = "muted"; msg.textContent = "Salvando…";
     try {
-      const { corpo } = await chamar(`/vetor/perfis/${p.id}`, { method: "PATCH", body: JSON.stringify({ papel: papel.value, ver_custos: custos.checked, is_active: ativo.checked }) });
+      const { corpo } = await chamar(`/vetor/perfis/${p.id}`, { method: "PATCH", body: JSON.stringify({ papel: papel.value, is_active: ativo.checked }) });
       Object.assign(p, corpo); msg.className = "ok"; msg.textContent = "Salvo."; carregarAuditoria(1);
     } catch (e) {
-      papel.value = p.papel; custos.checked = p.ver_custos; ativo.checked = p.is_active;
+      papel.value = p.papel; ativo.checked = p.is_active;
       msg.className = "erro"; msg.textContent = e.message;
     }
   };
   const nome = el("td", { text: p.full_name || "—" });
   if (p.is_superuser) nome.append(" ", el("span", { class: "tag", title: "Conta técnica com acesso total ao Taiga", text: "técnica" }));
   return el("tr", {}, nome, el("td", { text: p.username }), el("td", { text: p.email }), el("td", {}, papel),
-    el("td", {}, custos), el("td", {}, ativo), el("td", {}, salvar, " ", msg));
+    el("td", {}, p.ver_custos ? el("span", { class: "tag", text: "matriz" }) : "—"), el("td", {}, ativo), el("td", {}, salvar, " ", msg));
 }
 
 async function carregarAuditoria(pagina = 1) {
@@ -238,7 +236,7 @@ function prepararFormulario() {
   opcoesPapel(form.papel, "observador");
   form.onsubmit = async ev => {
     ev.preventDefault(); msg.className = "muted"; msg.textContent = "Criando…";
-    const dados = { full_name: form.full_name.value, username: form.username.value, email: form.email.value, papel: form.papel.value, ver_custos: form.ver_custos.checked };
+    const dados = { full_name: form.full_name.value, username: form.username.value, email: form.email.value, papel: form.papel.value };
     try {
       await chamar("/vetor/perfis", { method: "POST", body: JSON.stringify(dados) });
       msg.className = "ok"; msg.textContent = `Conta criada. ${dados.email} recebeu o e-mail para definir a senha.`;

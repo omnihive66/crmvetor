@@ -1,9 +1,11 @@
 # Custos — regras, importação e o que falta para AWS/Oracle (SPEC-09)
 
-**Acesso:**
-- Toda rota de custos exige a opção **"Ver custos"** do perfil (SPEC-02), inclusive para o Administrador, e inclusive na listagem e na exportação. Sem ela: 403. Sem sessão: 401.
-- Alterar custos exige ainda ser gestor ou administrador.
-- Cada pessoa vê só os clientes do seu escopo (SPEC-03).
+**Acesso: fechado para o usuário matriz.**
+- Só o(s) usuário(s) listados em `VETOR_FINANCEIRO_USUARIOS`, no `.env` do servidor, consultam e alteram custos. A listagem e a exportação seguem a mesma regra.
+- Vazio deixa o financeiro fechado para todos.
+- Quem não está na lista recebe 403, inclusive outros administradores e gestores. Sem sessão: 401.
+- Não há opção na tela para liberar outras pessoas. A antiga "Ver custos" por pessoa (SPEC-02) não tem mais efeito, e tentar ligá-la pela API dá 400.
+- O matriz vê os clientes do seu escopo (SPEC-03); sendo Administrador, todos.
 - A auditoria registra quem alterou, o que e quando, **sem valores**, porque a auditoria é vista por quem não tem a permissão financeira.
 
 **Fonte contratual:** o sistema financeiro externo, cujo nome ainda está em aberto (`VETOR_SISTEMA_FINANCEIRO_*`). Os valores daqui são internos, para estimar e comparar.

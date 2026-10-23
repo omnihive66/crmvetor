@@ -26,6 +26,12 @@ def papel(user):
     return settings.VETOR_PAPEL_SEM_PERFIL  # produção: observador (negar por padrão)
 
 
+def financeiro(user):
+    """Custos só para o(s) usuário(s) matriz definidos no servidor (VETOR_FINANCEIRO_USUARIOS). Vazio = fechado."""
+    return bool(user and user.is_authenticated and user.is_active
+                and user.username.lower() in settings.VETOR_FINANCEIRO_USUARIOS)
+
+
 def e_administrador(user):
     return bool(user and user.is_authenticated and user.is_active and
                 (user.is_superuser or papel(user) == Perfil.ADMINISTRADOR))

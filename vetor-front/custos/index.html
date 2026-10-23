@@ -132,7 +132,7 @@ function preparar() {
 async function iniciar() {
   if (!Vetor.token()) return main.replaceChildren(el("div", { class: "card estado" }, el("p", { text: "Entre no sistema." }), el("a", { href: `${RAIZ}login`, text: "Ir para o login" })));
   const eu = await Vetor.me();
-  if (!eu || !eu.ver_custos) return main.replaceChildren(el("div", { class: "card estado", role: "alert" }, el("p", { class: "erro", text: "Sem permissão financeira. Peça ao Administrador a opção “Ver custos”." })));
+  if (!eu || !eu.ver_custos) return main.replaceChildren(el("div", { class: "card estado", role: "alert" }, el("p", { class: "erro", text: "O financeiro é restrito ao usuário matriz." })));
   main.replaceChildren(document.getElementById("tpl").content.cloneNode(true));
   try { clientes = (await chamar("/vetor/clientes?page_size=500")).corpo; } catch (e) { console.warn("Clientes:", e.message); }
   preparar(); atualizar();

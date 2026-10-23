@@ -109,8 +109,7 @@ class PerfilSerializer(serializers.LightSerializer):
         return permissoes.papel(user)
 
     def get_ver_custos(self, user):
-        perfil = getattr(user, "vetor_perfil", None)
-        return bool(perfil and perfil.ver_custos)
+        return permissoes.financeiro(user)  # só o usuário matriz (servidor), não é mais opção por pessoa
 
 
 class PerfilViewSet(TransacaoNaEscrita, SomenteAdministrador, ListModelMixin, GenericViewSet):
@@ -192,9 +191,7 @@ def _validar_perfil(data, parcial=False):
             raise exc.WrongArguments({"papel": ["Papel inválido. Use: %s." % ", ".join(permissoes.NOMES)]})
         dados["papel"] = data["papel"]
     if "ver_custos" in data:
-        if not isinstance(data["ver_custos"], bool):
-            raise exc.WrongArguments({"ver_custos": ["Use verdadeiro ou falso."]})
-        dados["ver_custos"] = data["ver_custos"]
+        raise exc.WrongArguments({"ver_custos": ["O financeiro é fechado para o usuário matriz, definido no servidor (VETOR_FINANCEIRO_USUARIOS)."]})
     return dados
 
 

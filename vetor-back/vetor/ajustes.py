@@ -33,6 +33,8 @@ def aplicar(s):
     # Adoção (SPEC-08): eventos de uso mais antigos que isto são apagados (tarefa diária).
     s["VETOR_USO_RETENCAO_DIAS"] = int(os.getenv("VETOR_USO_RETENCAO_DIAS", "180"))
     s["CELERY_BEAT_SCHEDULE"]["vetor-uso-retencao"] = {"task": "vetor.tasks.limpar_uso", "schedule": 86400.0}
+    # Financeiro (SPEC-09): fechado; só estes usuários (o "matriz") consultam e alteram custos. Vazio = ninguém.
+    s["VETOR_FINANCEIRO_USUARIOS"] = [u.strip().lower() for u in os.getenv("VETOR_FINANCEIRO_USUARIOS", "").split(",") if u.strip()]
     # O Taiga desliga loggers não declarados: sem isto, vetor.agente e vetor.lembretes não aparecem (só ids, nunca conteúdo).
     s["LOGGING"]["loggers"]["vetor"] = {"handlers": ["console"], "level": "INFO", "propagate": False}
     # Nome do sistema financeiro/contratual externo ainda não confirmado (README): fica configurável.
