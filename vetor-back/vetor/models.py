@@ -193,3 +193,55 @@ class RequisicaoAgente(models.Model):
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=["token", "chave"], name="vetor_agente_chave_unica")]
+
+
+class Repositorio(models.Model):
+    """Repositório ligado a um projeto (1:N). Só identifica: a Vetor não guarda token do provedor."""
+    projeto = models.ForeignKey("projects.Project", on_delete=models.CASCADE, related_name="vetor_repositorios")
+    provedor = models.CharField(max_length=20, default="github")
+    nome = models.CharField(max_length=200)  # "dono/repo", como o provedor mostra
+    id_externo = models.CharField(max_length=40, blank=True, default="")  # id numérico do provedor: sobrevive a renomear
+    criado_por = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+")
+    criado_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["nome"]
+        constraints = [models.UniqueConstraint(fields=["provedor", "nome"], name="vetor_repositorio_unico")]
+
+
+class EventoProvedor(models.Model):
+    """Cada entrega do webhook, como chegou: deduplicação pelo id da entrega, reprocessamento e fila de falhas."""
+    RECEBIDO, PROCESSADO, IGNORADO, FALHOU = "recebido", "processado", "ignorado", "falhou"
+    provedor = models.CharField(max_length=20, default="github")
+    entrega = models.CharField(max_length=100)  # X-GitHub-Delivery
+    evento = models.CharField(max_length=50)
+    repositorio = models.ForeignKey(Repositorio, null=True, on_delete=models.SET_NULL, related_name="eventos")
+    payload = models.JSONField()
+    status = models.CharField(max_length=12, default=RECEBIDO, db_index=True)
+    tentativas = models.PositiveSmallIntegerField(default=0)
+    erro = models.TextField(blank=True, default="")
+    recebido_em = models.DateTimeField(auto_now_add=True)
+    processado_em = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-recebido_em"]
+        constraints = [models.UniqueConstraint(fields=["provedor", "entrega"], name="vetor_evento_entrega_unica")]
+
+
+class VinculoCodigo(models.Model):
+    """Issue, commit ou pull request citado numa história (TG-<ref>). Sincroniza só do provedor para a Vetor."""
+    historia = models.ForeignKey("userstories.UserStory", on_delete=models.CASCADE, related_name="vetor_vinculos")
+    repositorio = models.ForeignKey(Repositorio, on_delete=models.CASCADE, related_name="vinculos")
+    tipo = models.CharField(max_length=12)  # issue, commit, pr
+    id_externo = models.CharField(max_length=60)  # id do provedor (issue/PR) ou sha (commit)
+    numero = models.PositiveIntegerField(null=True, blank=True)
+    url = models.URLField(max_length=500)
+    titulo = models.CharField(max_length=500)
+    estado = models.CharField(max_length=10, blank=True, default="")  # PR: draft/open/merged/closed; issue: open/closed
+    autor_externo = models.CharField(max_length=100, blank=True, default="")
+    atualizado_no_provedor = models.DateTimeField(null=True, blank=True)  # evita que evento antigo sobrescreva o novo
+    evento = models.ForeignKey(EventoProvedor, null=True, on_delete=models.SET_NULL, related_name="+")  # origem da última mudança
+
+    class Meta:
+        ordering = ["tipo", "-atualizado_no_provedor"]
+        constraints = [models.UniqueConstraint(fields=["historia", "tipo", "id_externo"], name="vetor_vinculo_unico")]

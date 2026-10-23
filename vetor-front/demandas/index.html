@@ -33,6 +33,13 @@
   <p class="vt-meta">“Mover para” muda a etapa sem arrastar (teclado). Se alguém tiver mudado a mesma demanda antes, nada é gravado e o valor volta ao atual.</p>
 </main>
 
+<dialog id="dlg-codigo" aria-labelledby="dlg-codigo-titulo">
+  <h2 id="dlg-codigo-titulo">Código ligado (GitHub)</h2>
+  <div id="codigo-conteudo"></div>
+  <p class="vt-meta">Vem do GitHub (só leitura). A etapa não muda sozinha: com PR concluído (merged), mova a demanda quando confirmar. PR fechado sem merge não conclui nada.</p>
+  <div class="acoes"><button type="button" class="sec" onclick="this.closest('dialog').close()">Fechar</button></div>
+</dialog>
+
 <dialog id="dlg-etapas" aria-labelledby="dlg-etapas-titulo">
   <h2 id="dlg-etapas-titulo">Participação por etapa</h2>
   <div id="etapas-conteudo"></div>
@@ -95,6 +102,20 @@ async function verEtapas(d) {
   } catch (e) { alvo.replaceChildren(el("p", { class: "erro", text: e.message })); }
 }
 
+const ESTADO_CODIGO = { draft: "rascunho", open: "aberto", merged: "merged (concluído)", closed: "fechado sem merge" };
+async function verCodigo(d) {
+  const alvo = document.getElementById("codigo-conteudo");
+  alvo.replaceChildren(el("p", { class: "vt-meta", role: "status", text: "Carregando…" })); document.getElementById("dlg-codigo").showModal();
+  try {
+    const lista = (await chamar(`/vetor/vinculos-codigo?historia=${d.id}`)).corpo;
+    const tipo = v => v.tipo === "pr" ? `PR #${v.numero}` : v.tipo === "issue" ? `Issue #${v.numero}` : `Commit ${v.id_externo.slice(0, 7)}`;
+    alvo.replaceChildren(el("p", { text: `#${d.ref} ${d.assunto}` }), lista.length ? el("ul", { class: "lista-simples" }, ...lista.map(v => el("li", {},
+      el("a", { href: v.url, rel: "noopener", text: `${tipo(v)} · ${v.titulo}` }),
+      el("div", { class: "vt-meta", text: [v.repositorio, v.estado && (v.tipo === "pr" ? ESTADO_CODIGO[v.estado] : v.estado), v.autor_externo].filter(Boolean).join(" · ") }))))
+      : el("p", { class: "vt-meta", text: `Nada ligado ainda. Cite TG-${d.ref} no PR, na branch, no commit ou na issue do repositório do projeto.` }));
+  } catch (e) { alvo.replaceChildren(el("p", { class: "erro", text: e.message })); }
+}
+
 async function linha(d) {
   const etapas = await etapasDoProjeto(d.projeto.id).catch(() => []);
   const msg = el("span", { role: "status", "aria-live": "polite" });
@@ -114,7 +135,8 @@ async function linha(d) {
     el("td", { text: [d.responsavel && d.responsavel.nome, ...d.colaboradores.map(c => c.nome)].filter(Boolean).join(", ") || "—" }),
     el("td", { text: dia(d.prazo) }),
     el("td", {}, select, " ", msg),
-    el("td", {}, el("button", { type: "button", class: "sec", text: "Etapas", "aria-label": `Participação por etapa de #${d.ref}`, onclick: () => verEtapas(d) })));
+    el("td", {}, el("button", { type: "button", class: "sec", text: "Etapas", "aria-label": `Participação por etapa de #${d.ref}`, onclick: () => verEtapas(d) }), " ",
+      el("button", { type: "button", class: "sec", text: "Código", "aria-label": `Código ligado a #${d.ref}`, onclick: () => verCodigo(d) })));
 }
 
 async function carregar() {
