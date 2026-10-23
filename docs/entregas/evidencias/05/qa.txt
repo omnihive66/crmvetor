@@ -1,0 +1,12 @@
+1. lembrete criado pela tela → Venceu 22/10/2026, 21:20 (campo local 2026-10-22T21:20)
+2. aviso do worker → { avisos_nao_vistos: 1 } | barra lateral: 1 lembrete(s) vencido(s)
+   depois de abrir a lista → aviso na barra: sumiu | api: { avisos_nao_vistos: 0 }
+3. outra pessoa → lista: 0 | por ID: 404 | busca: nada
+4. prévia → Destino[FICTÍCIO] Portal do ClienteQuem veráVisível para as 2 pessoa(s) do projeto “[FICTÍCIO] Portal do Cliente”.Assunto[FICTÍCIO] Ligar para o cliente sobre a propostaDescrição(vazia)Prazo22/10/2026Não será copiadonotas, cliente/projeto/história de referênciaSeu lembreteContinua privado e fica como concluído, com o link para a demanda.
+   confirmado → Demanda criada: #9
+   repetição → 200 mesma demanda | demandas com esse assunto: 1
+5. agente cria → 201 {"id":2,"tipo":"lembrete","privado":true} | mesma chave de novo: 201 mesmo lembrete
+   projeto inexistente → {"esclarecimento":{"campo":"projeto","motivo":"nao_encontrado","valor":"Projeto que não existe"}}
+   token em outra rota → 401
+   depois de revogar → 401
+6. celular → rolagem horizontal da página: false

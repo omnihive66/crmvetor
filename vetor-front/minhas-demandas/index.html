@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Minhas demandas - Vetor Sistemas</title>
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="stylesheet" href="../ui/vetor-ui.css">
+<link rel="stylesheet" href="../ui/shell.css">
+<script src="../ui/shell.js" data-sprite="__SPRITE__"></script>
+<style>
+  section { margin-bottom: 28px; }
+  .secao { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .secao h2 { margin: 0; display: flex; align-items: center; gap: 8px; }
+  .secao svg { width: 18px; height: 18px; fill: currentColor; }
+  .vencido { color: var(--danger); font-weight: 600; }
+  .previa dt { font-size: 13px; color: var(--muted); margin-top: 8px; }
+  .previa dd { margin: 2px 0 0; }
+  .token { font-family: ui-monospace, monospace; word-break: break-all; background: var(--canvas); padding: 8px; border-radius: 8px; }
+  td .acoes { margin: 0; }
+</style>
+</head>
+<body>
+<div class="vt-topo"><nav aria-label="Você está em"><a href="../../">Visão geral</a> › Minhas demandas</nav></div>
+<main>
+  <div class="vt-cabecalho"><div><h1>Minhas demandas</h1>
+    <p class="vt-meta">Tarefas dos projetos ficam visíveis para a equipe. Lembretes são só seus: ninguém mais os vê, nem administradores.</p></div></div>
+
+  <section aria-labelledby="t-tarefas">
+    <div class="secao"><h2 id="t-tarefas">Tarefas compartilhadas comigo</h2><a href="../demandas/">Ver todas as demandas</a></div>
+    <div id="tarefas"><div class="card estado" role="status">Carregando…</div></div>
+  </section>
+
+  <section aria-labelledby="t-lembretes">
+    <div class="secao">
+      <h2 id="t-lembretes"><span id="ic-privado"></span>Meus lembretes (privados)</h2>
+      <div class="acoes" style="margin:0">
+        <label class="sr" for="f-estado">Mostrar</label>
+        <select id="f-estado" style="width:auto"><option value="aberto">Abertos</option><option value="concluido">Concluídos</option><option value="cancelado">Cancelados</option><option value="todos">Todos</option></select>
+        <button type="button" id="novo">Novo lembrete</button>
+      </div>
+    </div>
+    <div id="lembretes"><div class="card estado" role="status">Carregando…</div></div>
+    <p class="vt-meta">Avisos de vencimento aparecem na barra lateral (horário de Brasília); o e-mail é opcional em cada lembrete.</p>
+  </section>
+
+  <section aria-labelledby="t-agente">
+    <div class="secao"><h2 id="t-agente">Agente externo</h2><button type="button" class="sec" id="novo-token">Criar token</button></div>
+    <p class="vt-meta">Um token deixa um assistente criar lembretes ou demandas <strong>em seu nome</strong>, só com os escopos escolhidos. Revogue quando não usar mais.</p>
+    <div id="tokens"></div>
+  </section>
+</main>
+
+<dialog id="dlg-lembrete" aria-labelledby="dlg-lembrete-titulo">
+  <form method="dialog" id="form-lembrete" novalidate>
+    <h2 id="dlg-lembrete-titulo">Novo lembrete</h2>
+    <div class="campos">
+      <label class="largo">Título <input type="text" name="titulo" maxlength="200" required></label>
+      <label class="largo">Notas <textarea name="notas" maxlength="20000"></textarea></label>
+      <label>Vencimento (Brasília) <input type="datetime-local" name="vencimento"></label>
+      <label>Repetir <select name="recorrencia"><option value="">Não repete</option><option value="diaria">Todo dia</option><option value="semanal">Toda semana</option><option value="mensal">Todo mês</option></select></label>
+      <label>Cliente <select name="cliente"><option value="">Nenhum</option></select></label>
+      <label>Projeto <select name="projeto"><option value="">Nenhum</option></select></label>
+      <label class="check largo"><input type="checkbox" name="avisar_email"> Avisar também por e-mail</label>
+    </div>
+    <p class="erro" id="lembrete-erro" role="alert"></p>
+    <div class="acoes"><button type="submit" value="salvar">Salvar</button><button type="button" class="sec" onclick="this.closest('dialog').close()">Cancelar</button></div>
+  </form>
+</dialog>
+
+<dialog id="dlg-converter" aria-labelledby="dlg-converter-titulo">
+  <h2 id="dlg-converter-titulo">Transformar em demanda do projeto</h2>
+  <div class="campos">
+    <label>Projeto de destino <select id="c-projeto"><option value="">Escolha…</option></select></label>
+    <label class="check"><input type="checkbox" id="c-notas"> Copiar as notas para a descrição</label>
+  </div>
+  <div id="c-previa" aria-live="polite"></div>
+  <div class="acoes"><button type="button" id="c-confirmar" disabled>Criar demanda visível ao projeto</button><button type="button" class="sec" onclick="this.closest('dialog').close()">Cancelar</button></div>
+</dialog>
+
+<dialog id="dlg-token" aria-labelledby="dlg-token-titulo">
+  <form method="dialog" id="form-token" novalidate>
+    <h2 id="dlg-token-titulo">Criar token do agente</h2>
+    <div class="campos">
+      <label class="largo">Nome (para você reconhecer) <input type="text" name="nome" maxlength="80" required></label>
+      <label class="check largo"><input type="checkbox" name="lembretes" checked> Criar lembretes privados meus</label>
+      <label class="check largo"><input type="checkbox" name="demandas"> Criar demandas nos projetos onde eu posso criar (visíveis à equipe)</label>
+    </div>
+    <div id="token-resultado" aria-live="polite"></div>
+    <p class="erro" id="token-erro" role="alert"></p>
+    <div class="acoes"><button type="submit" id="token-criar">Criar</button><button type="button" class="sec" onclick="this.closest('dialog').close()">Fechar</button></div>
+  </form>
+</dialog>
+
+<script>
+"use strict";
+const { el, chamar, RAIZ, quando } = Vetor;
+const REPETE = { "": "", diaria: "todo dia", semanal: "toda semana", mensal: "todo mês" };
+const ESTADO = { aberto: "Aberto", concluido: "Concluído", cancelado: "Cancelado" };
+let projetos = [], editando = null;
+const dia = d => d ? new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeZone: "UTC" }).format(new Date(d + "T00:00:00Z")) : "—";
+const falha = (alvo, e, tentar) => alvo.replaceChildren(el("div", { class: "card estado", role: "alert" },
+  el("p", { class: "erro", text: e.status === 401 ? "Sua sessão expirou." : "Não foi possível carregar: " + e.message }),
+  e.status === 401 ? el("a", { href: `${RAIZ}login`, text: "Entrar novamente" }) : el("button", { type: "button", class: "sec", text: "Tentar novamente", onclick: tentar })));
+
+// Brasil sem horário de verão desde 2019: o campo local vira ISO com -03:00 e volta pelo fuso de São Paulo.
+function paraCampo(iso) {
+  if (!iso) return "";
+  const p = Object.fromEntries(new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(new Date(iso)).map(x => [x.type, x.value]));
+  return `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}`;
+}
+const doCampo = v => v ? `${v}:00-03:00` : null;
+
+async function carregarTarefas() {
+  const alvo = document.getElementById("tarefas");
+  try {
+    const eu = (await chamar("/users/me")).corpo;
+    const lista = (await chamar(`/vetor/demandas?responsavel=${eu.id}`)).corpo;
+    alvo.replaceChildren(lista.length ? el("div", { class: "card tabela" }, el("table", {}, el("caption", { class: "sr", text: "Tarefas compartilhadas comigo" }),
+      el("thead", {}, el("tr", {}, ...["Demanda", "Projeto", "Etapa", "Prazo"].map(t => el("th", { scope: "col", text: t })))),
+      el("tbody", {}, ...lista.map(d => el("tr", {},
+        el("td", {}, el("a", { href: `${RAIZ}project/${d.projeto.slug}/us/${d.ref}`, text: `#${d.ref} ${d.assunto}` }),
+          d.bloqueada ? el("div", { class: "vencido", text: "Bloqueada" }) : null),
+        el("td", { text: d.projeto.nome }), el("td", { text: d.etapa.nome }), el("td", { text: dia(d.prazo) }))))))
+      : el("div", { class: "card estado" }, el("p", { text: "Nenhuma tarefa aberta atribuída a você." })));
+  } catch (e) { falha(alvo, e, carregarTarefas); }
+}
+
+function referencias(r) {
+  const partes = [];
+  if (r.cliente) partes.push(el("a", { href: `../clientes/cliente.html?id=${r.cliente.id}`, text: r.cliente.nome }));
+  if (r.projeto) partes.push(el("a", { href: `${RAIZ}project/${r.projeto.slug}/`, text: r.projeto.nome }));
+  if (r.historia) partes.push(el("a", { href: `${RAIZ}project/${r.historia.projeto}/us/${r.historia.ref}`, text: `#${r.historia.ref}` }));
+  if (r.convertido_em) partes.push(el("a", { href: `${RAIZ}project/${r.convertido_em.projeto}/us/${r.convertido_em.ref}`, text: `virou #${r.convertido_em.ref}` }));
+  if (r.referencia_indisponivel) partes.push(el("span", { class: "vt-meta", text: "referência sem acesso" }));
+  return partes.length ? partes.flatMap((p, i) => i ? [" · ", p] : [p]) : ["—"];
+}
+
+async function alterar(l, dados, msg) {
+  try { await chamar(`/vetor/lembretes/${l.id}`, { method: dados ? "PATCH" : "DELETE", body: dados ? JSON.stringify(dados) : undefined }); carregarLembretes(); }
+  catch (e) { msg.className = "erro"; msg.textContent = e.message; }
+}
+
+async function carregarLembretes() {
+  const alvo = document.getElementById("lembretes"), estado = document.getElementById("f-estado").value;
+  try {
+    const lista = (await chamar(`/vetor/lembretes?estado=${estado}`)).corpo;
+    if (!lista.length) return alvo.replaceChildren(el("div", { class: "card estado" }, el("p", { text: "Nenhum lembrete aqui." }),
+      el("button", { type: "button", class: "sec", text: "Criar lembrete", onclick: () => abrirLembrete() })));
+    alvo.replaceChildren(el("div", { class: "card tabela" }, el("table", {}, el("caption", { class: "sr", text: "Meus lembretes privados" }),
+      el("thead", {}, el("tr", {}, ...["Lembrete", "Vence", "Referências", "Estado", "Ações"].map(t => el("th", { scope: "col", text: t })))),
+      el("tbody", {}, ...lista.map(l => {
+        const msg = el("span", { role: "status" });
+        const aberto = l.estado === "aberto";
+        return el("tr", {},
+          el("td", {}, el("strong", { text: l.titulo }), l.notas ? el("div", { class: "vt-meta pre", text: l.notas.slice(0, 200) }) : null),
+          el("td", {}, l.vencimento ? el("span", { class: l.vencido ? "vencido" : null, text: (l.vencido ? "Venceu " : "") + quando.format(new Date(l.vencimento)) }) : "—",
+            l.recorrencia ? el("div", { class: "vt-meta", text: "repete " + REPETE[l.recorrencia] }) : null),
+          el("td", {}, ...referencias(l.referencias)),
+          el("td", { text: ESTADO[l.estado] }),
+          el("td", {}, el("div", { class: "acoes" },
+            aberto ? el("button", { type: "button", class: "sec", text: "Concluir", "aria-label": `Concluir “${l.titulo}”`, onclick: () => alterar(l, { estado: "concluido" }, msg) })
+                   : el("button", { type: "button", class: "sec", text: "Reabrir", "aria-label": `Reabrir “${l.titulo}”`, onclick: () => alterar(l, { estado: "aberto" }, msg) }),
+            el("button", { type: "button", class: "sec", text: "Editar", "aria-label": `Editar “${l.titulo}”`, onclick: () => abrirLembrete(l) }),
+            aberto ? el("button", { type: "button", class: "sec", text: "Virar demanda", "aria-label": `Transformar “${l.titulo}” em demanda`, onclick: () => abrirConversao(l) }) : null,
+            el("button", { type: "button", class: "perigo", text: "Excluir", "aria-label": `Excluir “${l.titulo}”`, onclick: () => confirm(`Excluir o lembrete “${l.titulo}”?`) && alterar(l, null, msg) }),
+            msg)));
+      })))));
+    // Quem abriu a lista viu os avisos: some o número da barra lateral.
+    await chamar("/vetor/lembretes/marcar_vistos", { method: "POST" }).catch(() => {});
+    Vetor.avisos();
+  } catch (e) { falha(alvo, e, carregarLembretes); }
+}
+
+function abrirLembrete(l) {
+  editando = l || null;
+  const f = document.getElementById("form-lembrete");
+  f.reset(); document.getElementById("lembrete-erro").textContent = "";
+  document.getElementById("dlg-lembrete-titulo").textContent = l ? "Editar lembrete" : "Novo lembrete";
+  if (l) {
+    f.titulo.value = l.titulo; f.notas.value = l.notas; f.vencimento.value = paraCampo(l.vencimento); f.recorrencia.value = l.recorrencia;
+    f.avisar_email.checked = l.avisar_email;
+    f.cliente.value = l.referencias.cliente ? l.referencias.cliente.id : ""; f.projeto.value = l.referencias.projeto ? l.referencias.projeto.id : "";
+  }
+  document.getElementById("dlg-lembrete").showModal(); f.titulo.focus();
+}
+
+document.getElementById("form-lembrete").addEventListener("submit", async ev => {
+  ev.preventDefault();
+  const f = ev.target, erro = document.getElementById("lembrete-erro");
+  if (!f.titulo.value.trim()) { erro.textContent = "Informe um título."; return f.titulo.focus(); }
+  const dados = { titulo: f.titulo.value, notas: f.notas.value, vencimento: doCampo(f.vencimento.value), recorrencia: f.recorrencia.value,
+    avisar_email: f.avisar_email.checked, cliente: Number(f.cliente.value) || null, projeto: Number(f.projeto.value) || null };
+  if (editando && editando.referencias.referencia_indisponivel) { delete dados.cliente; delete dados.projeto; } // não apaga o que você não vê mais
+  try {
+    await chamar(editando ? `/vetor/lembretes/${editando.id}` : "/vetor/lembretes", { method: editando ? "PATCH" : "POST", body: JSON.stringify(dados) });
+    document.getElementById("dlg-lembrete").close(); carregarLembretes();
+  } catch (e) { erro.textContent = e.message; }
+});
+
+let convertendo = null;
+function abrirConversao(l) {
+  convertendo = l;
+  const sel = document.getElementById("c-projeto");
+  sel.value = l.referencias.projeto ? l.referencias.projeto.id : ""; document.getElementById("c-notas").checked = false;
+  document.getElementById("dlg-converter").showModal(); previa();
+}
+async function previa() {
+  const alvo = document.getElementById("c-previa"), botao = document.getElementById("c-confirmar"), pid = document.getElementById("c-projeto").value;
+  botao.disabled = true;
+  if (!pid) return alvo.replaceChildren(el("p", { class: "vt-meta", text: "Escolha o projeto para ver o que será criado e quem verá." }));
+  alvo.replaceChildren(el("p", { class: "vt-meta", role: "status", text: "Carregando prévia…" }));
+  try {
+    const p = (await chamar(`/vetor/lembretes/${convertendo.id}/previa_conversao?projeto=${pid}&copiar_notas=${document.getElementById("c-notas").checked}`)).corpo;
+    alvo.replaceChildren(el("dl", { class: "previa card" },
+      el("dt", { text: "Destino" }), el("dd", { text: p.destino.nome }),
+      el("dt", { text: "Quem verá" }), el("dd", { text: p.visibilidade }),
+      el("dt", { text: "Assunto" }), el("dd", { text: p.campos.assunto }),
+      el("dt", { text: "Descrição" }), el("dd", { class: "pre", text: p.campos.descricao || "(vazia)" }),
+      el("dt", { text: "Prazo" }), el("dd", { text: dia(p.campos.prazo) }),
+      el("dt", { text: "Não será copiado" }), el("dd", { text: p.nao_copiados.join(", ") || "—" }),
+      el("dt", { text: "Seu lembrete" }), el("dd", { text: "Continua privado e fica como concluído, com o link para a demanda." })));
+    botao.disabled = false;
+  } catch (e) { alvo.replaceChildren(el("p", { class: "erro", role: "alert", text: e.message })); }
+}
+document.getElementById("c-projeto").addEventListener("change", previa);
+document.getElementById("c-notas").addEventListener("change", previa);
+document.getElementById("c-confirmar").addEventListener("click", async ev => {
+  ev.target.disabled = true;
+  try {
+    const r = (await chamar(`/vetor/lembretes/${convertendo.id}/converter`, { method: "POST",
+      body: JSON.stringify({ projeto: Number(document.getElementById("c-projeto").value), copiar_notas: document.getElementById("c-notas").checked, confirmar: true }) })).corpo;
+    document.getElementById("c-previa").replaceChildren(el("p", { class: "ok", role: "status" }, "Demanda criada: ",
+      el("a", { href: `${RAIZ}project/${r.projeto}/us/${r.ref}`, text: `#${r.ref}` })));
+    carregarLembretes(); carregarTarefas();
+  } catch (e) { ev.target.disabled = false; document.getElementById("c-previa").append(el("p", { class: "erro", role: "alert", text: e.message })); }
+});
+
+async function carregarTokens() {
+  const alvo = document.getElementById("tokens");
+  try {
+    const lista = (await chamar("/vetor/tokens-agente")).corpo;
+    alvo.replaceChildren(lista.length ? el("ul", { class: "lista-simples card" }, ...lista.map(t => el("li", {},
+      el("strong", { text: t.nome }), ` · ${t.prefixo}… · ${t.escopos.join(" e ")} · `,
+      el("span", { class: "vt-meta", text: t.revogado_em ? `revogado em ${quando.format(new Date(t.revogado_em))}` : t.usado_em ? `último uso ${quando.format(new Date(t.usado_em))}` : "nunca usado" }),
+      t.revogado_em ? null : el("button", { type: "button", class: "perigo", style: "margin-left:8px", text: "Revogar", "aria-label": `Revogar o token ${t.nome}`,
+        onclick: async () => { if (confirm(`Revogar “${t.nome}”? O agente para de funcionar na hora.`)) { await chamar(`/vetor/tokens-agente/${t.id}`, { method: "DELETE" }); carregarTokens(); } } }))))
+      : el("p", { class: "vt-meta", text: "Nenhum token criado." }));
+  } catch (e) { falha(alvo, e, carregarTokens); }
+}
+document.getElementById("novo-token").onclick = () => {
+  const f = document.getElementById("form-token"); f.reset();
+  document.getElementById("token-resultado").replaceChildren(); document.getElementById("token-erro").textContent = "";
+  document.getElementById("token-criar").hidden = false;
+  document.getElementById("dlg-token").showModal(); f.nome.focus();
+};
+document.getElementById("form-token").addEventListener("submit", async ev => {
+  ev.preventDefault();
+  const f = ev.target, erro = document.getElementById("token-erro");
+  const escopos = ["lembretes", "demandas"].filter(k => f[k].checked);
+  if (!f.nome.value.trim()) { erro.textContent = "Dê um nome ao token."; return f.nome.focus(); }
+  if (!escopos.length) { erro.textContent = "Escolha pelo menos um escopo."; return; }
+  try {
+    const r = (await chamar("/vetor/tokens-agente", { method: "POST", body: JSON.stringify({ nome: f.nome.value, escopos }) })).corpo;
+    erro.textContent = ""; document.getElementById("token-criar").hidden = true;
+    document.getElementById("token-resultado").replaceChildren(el("p", { class: "ok", text: "Copie agora: este token não será mostrado de novo." }),
+      el("p", { class: "token", text: r.token }));
+    carregarTokens();
+  } catch (e) { erro.textContent = e.message; }
+});
+
+async function iniciar() {
+  if (!Vetor.token()) return document.querySelector("main").replaceChildren(el("div", { class: "card estado" }, el("p", { text: "Entre no sistema para ver suas demandas." }), el("a", { href: `${RAIZ}login`, text: "Ir para o login" })));
+  document.getElementById("ic-privado").innerHTML = Vetor.icone("icon-lock");
+  document.getElementById("novo").onclick = () => abrirLembrete();
+  document.getElementById("f-estado").onchange = carregarLembretes;
+  carregarTarefas(); carregarLembretes(); carregarTokens();
+  try {
+    const [clientes, lista] = await Promise.all([chamar("/vetor/clientes?page_size=500"), chamar("/projects")]).then(r => r.map(x => x.corpo));
+    projetos = lista;
+    const f = document.getElementById("form-lembrete");
+    for (const c of clientes) f.cliente.append(el("option", { value: c.id, text: c.nome }));
+    for (const p of projetos) { f.projeto.append(el("option", { value: p.id, text: p.name })); document.getElementById("c-projeto").append(el("option", { value: p.id, text: p.name })); }
+  } catch (e) { console.warn("Listas de clientes/projetos:", e.message); }
+}
+iniciar();
+</script>
+</body>
+</html>

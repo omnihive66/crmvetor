@@ -8,7 +8,7 @@ navegador ──► taiga-gateway (nginx :9000)
                ├─ /api/        taiga-back   (imagem vetor/taiga-back: API oficial + app Django `vetor`)
                ├─ /events      taiga-events (imagem vetor/taiga-events: assinatura só do que o usuário pode ver)
                └─ /media/      taiga-protected (imagem vetor/taiga-protected: anexos e exportações com token assinado)
-             taiga-async (Celery) ◄── taiga-async-rabbitmq
+             taiga-async (Celery + beat: avisos de lembretes a cada minuto) ◄── taiga-async-rabbitmq
              taiga-db (PostgreSQL)
 ```
 
@@ -27,8 +27,9 @@ navegador ──► taiga-gateway (nginx :9000)
 | `vetor-front/` | `Dockerfile` + `build.py`: aplica paleta, logos, textos pt-BR e título sobre o build oficial do front (decisão 0003) |
 | `vetor-back/` | `Dockerfile`, `settings/config.py` e o app Django `vetor`: papéis e auditoria (decisão 0006), rotas, traduções e e-mails (decisão 0002) |
 | `vetor-front/ui/` | base das telas próprias: `vetor-ui.css` (componentes) e a barra lateral global `shell.js`/`shell.css` (também no app do Taiga) |
-| `vetor-front/{clientes,demandas,busca,administracao}/` | telas próprias servidas em `/vetor/...`: CRM, demandas entre projetos, busca global e Administração |
+| `vetor-front/{clientes,demandas,minhas-demandas,busca,administracao}/` | telas próprias servidas em `/vetor/...`: CRM, demandas entre projetos, lembretes privados e tokens do agente, busca global e Administração |
 | `vetor-events/`, `vetor-protected/` | imagens derivadas com uma troca verificada no código oficial (falham no build se o trecho mudar) |
+| `docs/agente.md` | contrato das rotas do agente externo (SPEC-05) |
 | `infra/taiga-gateway.conf` | gateway oficial sem a seção que servia exportações sem token |
 | `scripts/qa/` | capturas de tela, teclado/zoom e menu por papel (Playwright) |
 

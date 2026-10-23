@@ -21,6 +21,11 @@ html.vt-shell-recolhido .vt-shell-busca { display: none; }
 .vt-shell nav a { display: flex; align-items: center; gap: 12px; padding: 9px 12px; border-radius: 8px; text-decoration: none; white-space: nowrap; }
 .vt-shell nav a:hover { background: #17201b; }
 .vt-shell nav a[aria-current="page"] { background: #17201b; color: #00d47a; box-shadow: inset 3px 0 0 #00d47a; }
+.vt-shell-aviso { margin-left: auto; min-width: 20px; padding: 1px 6px; border-radius: 10px; background: #00d47a; color: #090d0b;
+  font-size: 12px; text-align: center; }
+.vt-shell .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+html.vt-shell-recolhido .vt-shell nav a { position: relative; }
+html.vt-shell-recolhido .vt-shell-aviso { position: absolute; top: 2px; right: 2px; min-width: 16px; padding: 0 4px; font-size: 11px; }
 .vt-shell nav svg, .vt-shell-recolher svg { width: 18px; height: 18px; flex: none; fill: currentColor; }
 html.vt-shell-recolhido .vt-shell nav span, html.vt-shell-recolhido .vt-shell-recolher span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 .vt-shell-recolher { display: flex; align-items: center; gap: 12px; margin: 8px; padding: 9px 12px; border: 0; border-radius: 8px; background: none; cursor: pointer; }

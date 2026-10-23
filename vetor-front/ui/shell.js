@@ -6,7 +6,7 @@
   var RAIZ = new URL("../../", script.src).pathname;            // /vetor/ui/shell.js -> raiz do site
   var SPRITE = RAIZ + (script.getAttribute("data-sprite") || ""); // sprite do Taiga (pasta versionada, posta pelo build)
   var AUTH = /^(login|forgot-password|change-password|register|invitation|cancel-account|verify-email|change-email|external-apps)/;
-  var api = null, me = null;
+  var api = null, me = null, avisos = 0;
 
   function token() { try { return JSON.parse(localStorage.getItem("token")); } catch (e) { return null; } }
   function icone(id) { return '<svg aria-hidden="true"><use href="' + SPRITE + "#" + id + '"></use></svg>'; }
@@ -39,6 +39,7 @@
     var lista = [
       ["", "Visão geral", "icon-dashboard", /^$/],
       ["vetor/clientes/", "Clientes", "icon-briefcase", /^vetor\/clientes\//],
+      ["vetor/minhas-demandas/", "Minhas demandas", "icon-bell", /^vetor\/minhas-demandas\//],
       ["vetor/demandas/", "Demandas", "icon-clipboard", /^vetor\/demandas\//],
       ["projects/", "Projetos", "icon-folder", /^(projects|project)\//],
     ];
@@ -74,7 +75,8 @@
       "<nav>" + itens().map(function (i) {
         // target=_self: no app do Taiga o roteador do AngularJS capturaria o clique em telas que não são dele.
         return '<a href="' + RAIZ + i[0] + '"' + (i[0].indexOf("vetor/") === 0 ? ' target="_self"' : "") +
-          (i[3].test(atual) ? ' aria-current="page"' : "") + ' title="' + i[1] + '">' + icone(i[2]) + "<span>" + i[1] + "</span></a>";
+          (i[3].test(atual) ? ' aria-current="page"' : "") + ' title="' + i[1] + '">' + icone(i[2]) + "<span>" + i[1] + "</span>" +
+          (i[0] === "vetor/minhas-demandas/" && avisos ? '<b class="vt-shell-aviso">' + avisos + '<i class="sr"> lembrete(s) vencido(s)</i></b>' : "") + "</a>";
       }).join("") + "</nav>" +
       '<button class="vt-shell-recolher" type="button" aria-pressed="' + recolhido() + '">' +
       icone(recolhido() ? "icon-arrow-right" : "icon-arrow-left") + "<span>" + (recolhido() ? "Expandir menu" : "Recolher menu") + "</span></button>";
@@ -98,7 +100,15 @@
   function carregarMe() {
     var t = token();
     if (!t) { me = null; return Promise.resolve(); }
-    return chamar("/vetor/perfis/me").then(function (r) { me = r.corpo; }, function () { me = null; });
+    return chamar("/vetor/perfis/me").then(function (r) { me = r.corpo; }, function () { me = null; }).then(carregarAvisos);
+  }
+  // Aviso interno dos lembretes vencidos (SPEC-05): o worker marca; aqui só se conta.
+  function carregarAvisos() {
+    if (!token()) return Promise.resolve();
+    return chamar("/vetor/lembretes/resumo").then(function (r) {
+      var antes = avisos; avisos = r.corpo.avisos_nao_vistos;
+      if (antes !== avisos && document.querySelector(".vt-shell")) desenhar();
+    }, function () {});
   }
 
   // Reage a login/logout e às trocas de rota do app do Taiga (pushState) sem depender dele.
@@ -113,6 +123,7 @@
   aplicarRecolhido();
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", sincronizar); else sincronizar();
   setInterval(sincronizar, 1000);
+  setInterval(carregarAvisos, 60000);
 
   function el(tag, attrs) {
     var e = document.createElement(tag);
@@ -129,6 +140,7 @@
   window.Vetor = {
     RAIZ: RAIZ, token: token, chamar: chamar, el: el, icone: icone,
     me: function () { return carregarMe().then(function () { return me; }); },
+    avisos: carregarAvisos,
     quando: new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo" }),
     dia: new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium", timeZone: "America/Sao_Paulo" }),
   };

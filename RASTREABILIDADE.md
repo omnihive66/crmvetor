@@ -35,4 +35,5 @@ Essas respostas bloqueiam apenas a parte técnica dependente; não justificam si
 | 02 — Identidades e permissões | Concluída: papéis com teto, Administração, auditoria e correções de eventos e exportações. Pendentes: MFA/SSO (provedor), lembretes privados chegam na SPEC-05 | `docs/entregas/02-usuarios-permissoes.md` |
 | 03 — Clientes, documentos e reuniões | Concluída: CRM com escopo de acesso, documentos privados, reuniões que viram demanda, busca global e barra lateral. Pendentes: antivírus, retenção e nome do sistema financeiro | `docs/entregas/03-clientes-documentos.md` |
 | 04 — Projetos, fases e colaboração | Concluída: modelo de fluxo Vetor, participação por etapa, Demandas com filtros e alternativa por teclado ao arrastar | `docs/entregas/04-projetos-workflow.md` |
-| 05 a 10 | Não iniciadas | — |
+| 05 — Minhas demandas, lembretes e agente | Concluída com pendência: lembretes privados com aviso no fuso de Brasília, conversão com prévia e sem duplicar, tokens pessoais por escopo e contrato HTTP do agente. Pendente: conectar o agente real (tecnologia não informada) | `docs/entregas/05-lembretes-agente.md`, `docs/agente.md` |
+| 06 a 10 | Não iniciadas | — |
