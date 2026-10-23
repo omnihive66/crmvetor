@@ -23,6 +23,13 @@ def aplicar(s):
     # GitHub (SPEC-06): só o segredo do webhook. O _ANTERIOR continua valendo durante a troca (rotação).
     s["VETOR_GITHUB_WEBHOOK_SEGREDOS"] = [v for v in (os.getenv("VETOR_GITHUB_WEBHOOK_SECRET", ""),
                                                       os.getenv("VETOR_GITHUB_WEBHOOK_SECRET_ANTERIOR", "")) if v]
+    # Monitoramento (SPEC-07): token por provedor no cabeçalho X-Vetor-Token (Kuma e Beszel não assinam webhooks).
+    s["VETOR_MONITOR_TOKENS"] = {p: [v for v in (os.getenv(f"VETOR_{p.upper()}_TOKEN", ""), os.getenv(f"VETOR_{p.upper()}_TOKEN_ANTERIOR", "")) if v]
+                                 for p in ("kuma", "beszel")}
+    s["VETOR_MONITOR_JANELA_MIN"] = int(os.getenv("VETOR_MONITOR_JANELA_MIN", "15"))  # reincidência reabre o mesmo incidente
+    s["VETOR_MONITOR_AVISO_MIN"] = int(os.getenv("VETOR_MONITOR_AVISO_MIN", "30"))    # no máximo 1 e-mail por incidente nesse intervalo
+    s["VETOR_MONITOR_RETENCAO_DIAS"] = int(os.getenv("VETOR_MONITOR_RETENCAO_DIAS", "90"))  # depois disso, payload apagado
+    s["CELERY_BEAT_SCHEDULE"]["vetor-monitoramento-retencao"] = {"task": "vetor.tasks.limpar_monitoramento", "schedule": 86400.0}
     # O Taiga desliga loggers não declarados: sem isto, vetor.agente e vetor.lembretes não aparecem (só ids, nunca conteúdo).
     s["LOGGING"]["loggers"]["vetor"] = {"handlers": ["console"], "level": "INFO", "propagate": False}
     # Nome do sistema financeiro/contratual externo ainda não confirmado (README): fica configurável.
