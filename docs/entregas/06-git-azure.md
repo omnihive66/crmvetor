@@ -78,7 +78,7 @@ O GitHub precisa alcançar a URL pública com HTTPS, o que depende da publicaç�
 
 ### Testes automáticos
 - `vetor/tests`: **91 passaram** (15 novos).
-- Suíte oficial ampliada: ver `evidencias/06/pytest.txt`.
+- Suíte oficial ampliada: **994 passaram, 17 falharam**. As 17 são as mesmas divergências intencionais da SPEC-05, comparadas linha a linha, sem nenhuma falha nova (`evidencias/06/pytest.txt`).
 
 ## Problemas encontrados e corrigidos no caminho
 - **Tentativas desatualizadas:** depois de reprocessar, o número de tentativas e o erro na fila não se atualizavam. A QA pegou; corrigido.
