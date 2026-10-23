@@ -30,6 +30,9 @@ def aplicar(s):
     s["VETOR_MONITOR_AVISO_MIN"] = int(os.getenv("VETOR_MONITOR_AVISO_MIN", "30"))    # no máximo 1 e-mail por incidente nesse intervalo
     s["VETOR_MONITOR_RETENCAO_DIAS"] = int(os.getenv("VETOR_MONITOR_RETENCAO_DIAS", "90"))  # depois disso, payload apagado
     s["CELERY_BEAT_SCHEDULE"]["vetor-monitoramento-retencao"] = {"task": "vetor.tasks.limpar_monitoramento", "schedule": 86400.0}
+    # Adoção (SPEC-08): eventos de uso mais antigos que isto são apagados (tarefa diária).
+    s["VETOR_USO_RETENCAO_DIAS"] = int(os.getenv("VETOR_USO_RETENCAO_DIAS", "180"))
+    s["CELERY_BEAT_SCHEDULE"]["vetor-uso-retencao"] = {"task": "vetor.tasks.limpar_uso", "schedule": 86400.0}
     # O Taiga desliga loggers não declarados: sem isto, vetor.agente e vetor.lembretes não aparecem (só ids, nunca conteúdo).
     s["LOGGING"]["loggers"]["vetor"] = {"handlers": ["console"], "level": "INFO", "propagate": False}
     # Nome do sistema financeiro/contratual externo ainda não confirmado (README): fica configurável.

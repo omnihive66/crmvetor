@@ -7,7 +7,7 @@ from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator, validate_email
 from django.db import transaction
 from django.db.models import Q
-from django.utils.dateparse import parse_datetime
+from django.utils.dateparse import parse_date, parse_datetime
 
 from taiga.base import exceptions as exc
 from taiga.base import response
@@ -79,6 +79,7 @@ class ClienteSerializer(serializers.LightSerializer):
     responsavel_nome = MethodField()
     ciclo = Field()
     codigo_financeiro = Field()
+    proximo_contato = Field()
     observacoes = Field()
     arquivado = Field()
     criado_em = Field()
@@ -153,6 +154,14 @@ class ClienteViewSet(BaseVetor):
             if rid and not get_user_model().objects.filter(pk=rid, is_active=True, is_system=False).exists():
                 raise exc.WrongArguments({"responsavel": ["Pessoa inválida ou inativa."]})
             dados["responsavel_id"] = rid or None
+        if "proximo_contato" in data:
+            bruto = data.get("proximo_contato")
+            try:
+                dados["proximo_contato"] = parse_date(bruto) if bruto else None
+            except ValueError:  # bem formada mas inexistente (30/02)
+                dados["proximo_contato"] = None
+            if bruto and dados["proximo_contato"] is None:
+                raise exc.WrongArguments({"proximo_contato": ["Use a data no formato AAAA-MM-DD."]})
         if "arquivado" in data and cliente is not None:
             dados["arquivado"] = bool(data["arquivado"])
         return dados
@@ -160,6 +169,12 @@ class ClienteViewSet(BaseVetor):
     def retrieve(self, request, pk=None, **kwargs):
         _autenticado(request)
         return response.Ok(self.get_serializer(self.objeto(pk)).data)
+
+    @detail_route(methods=["GET"])
+    def painel(self, request, pk=None):
+        _autenticado(request)
+        from . import operacao
+        return response.Ok(operacao.painel(self.objeto(pk), request.user))
 
     def create(self, request, **kwargs):
         _autenticado(request)
