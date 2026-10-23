@@ -70,7 +70,7 @@ function desenhar() {
   });
   main.replaceChildren(cab, abas, painel);
   painel.setAttribute("aria-labelledby", `aba-${aba}`);
-  ({ resumo, operacao, projetos, contatos, documentos, reunioes, historico })[aba](painel);
+  ({ resumo, operacao, custos, projetos, contatos, documentos, reunioes, historico })[aba](painel);
 }
 function trocar(id) { params.set("aba", id); history.replaceState(null, "", `?${params}`); desenhar(); }
 
@@ -98,11 +98,11 @@ async function resumo(p) {
   item("Próximo contato", diaData(cliente.proximo_contato));
   const ultima = el("div", { class: "vt-meta", text: "Carregando reuniões…" });
   p.replaceChildren(el("h2", { text: "Resumo" }), dl,
-    cliente.observacoes ? el("p", { class: "pre", text: cliente.observacoes }) : null,
+    cliente.observacoes ? el("p", { class: "pre", text: cliente.observacoes }) : "",
     el("p", { class: "vt-meta", text: `Dados contratuais e financeiros ficam no ${fin.nome || "sistema financeiro (a configurar)"}, não aqui.` },
       fin.url && cliente.codigo_financeiro ? el("a", { href: fin.url.replace("{codigo}", encodeURIComponent(cliente.codigo_financeiro)), target: "_blank", rel: "noopener", text: " Abrir no sistema financeiro" }) : null),
     el("h2", { text: "Última reunião" }), ultima,
-    editar() ? el("div", { class: "acoes" }, el("button", { type: "button", class: "sec", text: "Editar dados", onclick: () => formResumo(p) })) : null);
+    editar() ? el("div", { class: "acoes" }, el("button", { type: "button", class: "sec", text: "Editar dados", onclick: () => formResumo(p) })) : "");
   try {
     const r = (await chamar(`/vetor/reunioes?cliente=${ID}&page_size=1`)).corpo[0];
     ultima.replaceChildren(r ? el("span", {}, `${Vetor.quando.format(new Date(r.data))} · `, el("a", { href: `?id=${ID}&aba=reunioes#reuniao-${r.id}`, text: "abrir ata" }),
@@ -210,6 +210,100 @@ function formProduto(p) {
         el("p", { class: "pre", style: "word-break:break-all;font-family:ui-monospace,monospace", text: r.token })); f.reset(); }
     catch (e) { msgErro(msg, e); } };
   return el("details", {}, el("summary", { text: "Adicionar produto com telemetria (Administrador)" }), f);
+}
+
+// Custos (SPEC-09): só com "ver custos"; o servidor confere de novo em toda chamada -----------
+const B = "/vetor/custos";
+const brl = (v, m = "BRL") => v === null || v === undefined ? "—" : new Intl.NumberFormat("pt-BR", { style: "currency", currency: m }).format(Number(v));
+const num = v => Number(v).toLocaleString("pt-BR", { maximumFractionDigits: 6 });
+const brlUnit = (v, m = "BRL") => new Intl.NumberFormat("pt-BR", { style: "currency", currency: m, maximumFractionDigits: 6 }).format(Number(v));  // preço fracionário
+const NOMES_GRUPO = { custo: "Custo", preco_venda: "Preço de venda", unico: "único", mensal: "mensal" };
+const mesAtual = () => new Date().toISOString().slice(0, 7);
+async function custos(p) {
+  p.replaceChildren(el("h2", { text: "Custos" }), el("p", { class: "vt-meta", role: "status", text: "Carregando…" }));
+  let ests;
+  try { ests = (await chamar(`${B}/estimativas?cliente=${ID}`)).corpo; }
+  catch (e) { return p.replaceChildren(el("h2", { text: "Custos" }), el("p", { class: "erro", role: "alert", text: e.status === 403 ? "Sem permissão financeira." : e.message })); }
+  const alvoEst = el("div"), alvoComp = el("div");
+  const seletor = el("select", { "aria-label": "Estimativa e versão" }, ...ests.map(e => el("option", { value: e.id, text: `${e.nome} · v${e.versao}${e.editavel ? "" : " (histórico)"}` })));
+  seletor.onchange = () => verEstimativa(alvoEst, Number(seletor.value), p);
+  const nova = el("form", { novalidate: true, class: "campos" }, campo("Nova estimativa", "nome", "", { max: 200 }),
+    el("div", { class: "acoes" }, el("button", { type: "submit", class: "sec", text: "Criar estimativa" })));
+  nova.onsubmit = async ev => { ev.preventDefault(); if (!nova.nome.value.trim()) return;
+    try { await chamar(`${B}/estimativas`, { method: "POST", body: JSON.stringify({ cliente: ID, nome: nova.nome.value, moeda: "BRL" }) }); custos(p); } catch (e) { alert(e.message); } };
+  p.replaceChildren(el("h2", { text: "Custos" }),
+    el("p", { class: "vt-meta", text: "Estimativa e realizado internos. A fonte contratual continua sendo o sistema financeiro; aqui não há corte automático de infraestrutura." }),
+    el("h3", { text: "Estimativas" }), ests.length ? seletor : el("p", { class: "vt-meta", text: "Nenhuma estimativa." }), alvoEst, editar() ? nova : "",
+    el("h3", { text: "Orçamento × realizado" }), alvoComp);
+  if (ests.length) verEstimativa(alvoEst, ests[0].id, p);
+  verComparacao(alvoComp, mesAtual());
+}
+async function verEstimativa(alvo, id, p) {
+  alvo.replaceChildren(el("p", { class: "vt-meta", text: "Carregando…" }));
+  const e = (await chamar(`${B}/estimativas/${id}`)).corpo, t = e.totais;
+  const valorItem = Object.fromEntries(t.itens.map(i => [i.id, i]));
+  const podeEditar = e.editavel && editar();
+  const linhas = e.itens.map(i => {
+    const v = valorItem[i.id] || {};
+    return el("tr", {}, el("td", { text: `${NOMES_GRUPO[i.tipo]} ${NOMES_GRUPO[i.recorrencia]}` }), el("td", { text: i.natureza }), el("td", { text: i.categoria + (i.descricao ? ` · ${i.descricao}` : "") }),
+      el("td", { text: i.natureza === "ajuste" ? `${num(i.percentual)}% sobre a base` : `${num(i.quantidade)} ${i.unidade} × ${brlUnit(i.preco_unitario, i.moeda)}` }),
+      el("td", {}, v.valor === null ? el("span", { class: "erro", text: "sem taxa" }) : brl(v.valor, e.moeda),
+        v.conversao ? el("div", { class: "vt-meta", text: `taxa ${v.conversao.par} ${v.conversao.taxa} em ${v.conversao.data} (${v.conversao.origem})` }) : null),
+      el("td", {}, podeEditar ? el("button", { type: "button", class: "perigo", text: "Remover", "aria-label": `Remover ${i.categoria}`,
+        onclick: async () => { if (confirm("Remover o item? A remoção fica registrada na auditoria.")) { await chamar(`${B}/itens/${i.id}`, { method: "DELETE" }); verEstimativa(alvo, id, p); } } }) : null));
+  });
+  const form = el("form", { novalidate: true, class: "campos" },
+    el("label", {}, "Tipo", el("select", { name: "tipo" }, el("option", { value: "custo", text: "Custo" }), el("option", { value: "preco_venda", text: "Preço de venda" }))),
+    el("label", {}, "Natureza", el("select", { name: "natureza" }, ...[["variavel", "Variável"], ["fixo", "Fixo"], ["ajuste", "Ajuste (% sobre a base)"]].map(([v, n]) => el("option", { value: v, text: n })))),
+    el("label", {}, "Recorrência", el("select", { name: "recorrencia" }, el("option", { value: "mensal", text: "Mensal" }), el("option", { value: "unico", text: "Único" }))),
+    campo("Categoria", "categoria", "", { max: 80 }), campo("Quantidade", "quantidade", "1"), campo("Unidade", "unidade", "", { max: 30 }),
+    campo("Preço unitário", "preco_unitario", "0"), campo("Percentual (ajuste)", "percentual", ""),
+    el("div", { class: "acoes" }, el("button", { type: "submit", class: "sec", text: "Adicionar item" })));
+  const msg = el("p", { role: "alert" });
+  form.onsubmit = async ev => { ev.preventDefault();
+    const d = Object.fromEntries(["tipo", "natureza", "recorrencia", "categoria", "quantidade", "unidade", "preco_unitario", "percentual"].map(k => [k, form[k].value]));
+    try { await chamar(`${B}/estimativas/${id}/itens`, { method: "POST", body: JSON.stringify(d) }); verEstimativa(alvo, id, p); } catch (err) { msgErro(msg, err); } };
+  alvo.replaceChildren(
+    el("p", { class: "vt-meta", text: `Moeda ${e.moeda} · validade ${diaData(e.validade) || "—"} · fonte: ${e.fonte || "—"}` }),
+    e.premissas ? el("p", { class: "pre", text: `Premissas: ${e.premissas}` }) : "",
+    el("div", { class: "tabela" }, el("table", {}, el("caption", { class: "sr", text: "Itens da estimativa" }),
+      el("thead", {}, el("tr", {}, ...["Grupo", "Natureza", "Item", "Cálculo", "Valor", ""].map(x => el("th", { scope: "col", text: x })))), el("tbody", {}, ...linhas))),
+    el("div", { class: "tabela" }, el("table", {}, el("caption", { text: "Totais por grupo (fixo + variável = antes de ajustes; ajustes incidem só sobre essa base)" }),
+      el("thead", {}, el("tr", {}, ...["Grupo", "Fixo", "Variável", "Antes de ajustes", "Ajustes", "Total"].map(x => el("th", { scope: "col", text: x })))),
+      el("tbody", {}, ...t.grupos.map(g => el("tr", {}, el("td", { text: `${NOMES_GRUPO[g.tipo]} ${NOMES_GRUPO[g.recorrencia]}` }),
+        ...[g.fixo, g.variavel, g.antes_de_ajustes, g.ajustes, g.total].map(v => el("td", { text: brl(v, t.moeda) }))))))),
+    t.pendentes.length ? el("p", { class: "erro", text: `${t.pendentes.length} item(ns) fora do total: ${t.pendentes.map(x => x.motivo).join("; ")}.` }) : "",
+    podeEditar ? form : el("p", { class: "vt-meta", text: e.editavel ? "Só gestores e administradores alteram." : "Versão de histórico: não editável." }), msg,
+    podeEditar ? el("div", { class: "acoes" }, el("button", { type: "button", class: "sec", text: "Criar nova versão",
+      onclick: async () => { await chamar(`${B}/estimativas/${id}/nova_versao`, { method: "POST" }); custos(p); } })) : "");
+}
+async function verComparacao(alvo, mes) {
+  const sel = el("input", { type: "month", value: mes, "aria-label": "Mês" });
+  sel.onchange = () => verComparacao(alvo, sel.value);
+  const orc = (await chamar(`${B}/orcamentos?cliente=${ID}`)).corpo.find(o => o.periodo.startsWith(mes));
+  const reais = (await chamar(`${B}/realizados?cliente=${ID}&periodo=${mes}`)).corpo;
+  let comp = null;
+  if (orc) comp = (await chamar(`${B}/orcamentos/${orc.id}/comparacao`)).corpo;
+  const fOrc = el("form", { novalidate: true, class: "campos" }, campo("Orçamento do mês (BRL)", "valor", orc ? num(orc.valor) : ""), campo("Alerta de desvio (%)", "alerta", orc ? num(orc.alerta_percentual) : "10"),
+    el("div", { class: "acoes" }, el("button", { type: "submit", class: "sec", text: "Salvar orçamento" })));
+  fOrc.onsubmit = async ev => { ev.preventDefault();
+    try { await chamar(`${B}/orcamentos`, { method: "POST", body: JSON.stringify({ cliente: ID, periodo: mes, valor: fOrc.valor.value, alerta_percentual: fOrc.alerta.value }) }); verComparacao(alvo, mes); } catch (e) { alert(e.message); } };
+  const fReal = el("form", { novalidate: true, class: "campos" }, campo("Categoria", "categoria", "", { max: 80 }), campo("Valor realizado", "valor", ""),
+    el("label", { class: "check" }, el("input", { type: "checkbox", name: "parcial" }), "Consumo parcial (mês em curso)"),
+    el("div", { class: "acoes" }, el("button", { type: "submit", class: "sec", text: "Lançar realizado" })));
+  fReal.onsubmit = async ev => { ev.preventDefault();
+    try { await chamar(`${B}/realizados`, { method: "POST", body: JSON.stringify({ cliente: ID, periodo: mes, categoria: fReal.categoria.value, valor: fReal.valor.value, parcial: fReal.parcial.checked }) }); verComparacao(alvo, mes); } catch (e) { alert(e.message); } };
+  alvo.replaceChildren(el("label", {}, "Mês ", sel),
+    comp ? el("div", { class: "card", style: "margin:12px 0" },
+      el("p", { style: "margin:0", text: `Orçamento ${brl(comp.orcamento)} · Realizado ${brl(comp.realizado)} · Diferença ${Number(comp.diferenca) > 0 ? "+" : ""}${brl(comp.diferenca)}` +
+        ` · ${comp.percentual === null ? "percentual não se aplica (orçamento zero)" : `${Number(comp.percentual) > 0 ? "+" : ""}${comp.percentual.replace(".", ",")}%`}` }),
+      ...comp.alertas.map(a => el("p", { class: "erro", style: "margin:4px 0 0", text: a.texto })),
+      comp.aviso_parcial ? el("p", { class: "vt-meta", text: comp.aviso_parcial }) : null,
+      comp.pendentes.length ? el("p", { class: "vt-meta", text: `Fora da soma: ${comp.pendentes.map(x => x.motivo).join("; ")}` }) : null)
+      : el("p", { class: "vt-meta", text: "Sem orçamento para o mês." }),
+    reais.length ? el("ul", { class: "lista-simples" }, ...reais.map(c => el("li", {}, `${c.categoria}: ${brl(c.valor, c.moeda)}`, c.parcial ? el("span", { class: "chip", style: "margin-left:8px", text: "parcial" }) : null,
+      c.origem === "importacao" ? el("span", { class: "vt-meta", text: ` · importado (${c.lote})` }) : null))) : el("p", { class: "vt-meta", text: "Nenhum realizado lançado no mês para este cliente." }),
+    editar() ? fOrc : "", editar() ? fReal : "");
 }
 
 // Projetos ---------------------------------------------------------------------------------
@@ -368,7 +462,12 @@ async function historico(p) {
 async function iniciar() {
   if (!Vetor.token()) return falha({ status: 401 }, iniciar);
   if (!ID) return falha({ status: 404 }, iniciar);
-  try { [opcoes, cliente] = (await Promise.all([chamar("/vetor/clientes/opcoes"), chamar(`/vetor/clientes/${ID}`)])).map(r => r.corpo); desenhar(); }
+  try {
+    [opcoes, cliente] = (await Promise.all([chamar("/vetor/clientes/opcoes"), chamar(`/vetor/clientes/${ID}`)])).map(r => r.corpo);
+    const eu = await Vetor.me();
+    if (eu && eu.ver_custos && !ABAS.some(a => a[0] === "custos")) ABAS.splice(2, 0, ["custos", "Custos"]);  // aba só com permissão financeira
+    desenhar();
+  }
   catch (e) { falha(e, iniciar); }
 }
 iniciar();

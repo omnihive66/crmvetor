@@ -3,7 +3,7 @@ from django.urls import include, re_path
 from taiga.base import routers
 from taiga.urls import urlpatterns as taiga_urlpatterns
 
-from . import api, api_clientes, api_github, api_lembretes, api_monitoramento, api_operacao, api_projetos, github, monitoramento
+from . import api, api_clientes, api_custos, api_github, api_lembretes, api_monitoramento, api_operacao, api_projetos, github, monitoramento
 
 router = routers.DefaultRouter(trailing_slash=False)
 router.include_root_view = False  # a raiz /api/v1/ continua sendo a do Taiga
@@ -21,6 +21,12 @@ router.register(r"vetor/tokens-agente", api_lembretes.TokenAgenteViewSet, base_n
 router.register(r"vetor/repositorios", api_github.RepositorioViewSet, base_name="vetor-repositorios")
 router.register(r"vetor/vinculos-codigo", api_github.VinculoViewSet, base_name="vetor-vinculos-codigo")
 router.register(r"vetor/eventos-github", api_github.EventoViewSet, base_name="vetor-eventos-github")
+router.register(r"vetor/custos/taxas", api_custos.TaxaViewSet, base_name="vetor-custos-taxas")
+router.register(r"vetor/custos/estimativas", api_custos.EstimativaViewSet, base_name="vetor-custos-estimativas")
+router.register(r"vetor/custos/itens", api_custos.ItemViewSet, base_name="vetor-custos-itens")
+router.register(r"vetor/custos/realizados", api_custos.CustoViewSet, base_name="vetor-custos-realizados")
+router.register(r"vetor/custos/rateios", api_custos.RateioViewSet, base_name="vetor-custos-rateios")
+router.register(r"vetor/custos/orcamentos", api_custos.OrcamentoViewSet, base_name="vetor-custos-orcamentos")
 router.register(r"vetor/produtos-telemetria", api_operacao.ProdutoViewSet, base_name="vetor-produtos-telemetria")
 router.register(r"vetor/incidentes", api_monitoramento.IncidenteViewSet, base_name="vetor-incidentes")
 router.register(r"vetor/recursos-monitorados", api_monitoramento.RecursoViewSet, base_name="vetor-recursos-monitorados")
