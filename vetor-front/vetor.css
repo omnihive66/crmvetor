@@ -1,4 +1,4 @@
-/* Vetor Sistemas — camada de marca sobre o tema oficial do Taiga (tokens em DESIGN.md). */
+/* Vetor Sistemas — camada de marca sobre o tema oficial do Taiga (tokens da identidade visual). */
 :root {
   --vt-brand: #00d47a; --vt-action: #087443; --vt-sidebar: #090d0b; --vt-canvas: #f5f7f6;
   --vt-surface: #fff; --vt-text: #14221b; --vt-muted: #52645a; --vt-border: #dce5df;
@@ -33,7 +33,7 @@ body { background: var(--vt-canvas); color: var(--vt-text); }
     transition-duration: .01ms !important; scroll-behavior: auto !important; }
 }
 
-/* Card bloqueado: além da cor, rótulo em texto (DESIGN.md: nunca só cor). */
+/* Card bloqueado: além da cor, rótulo em texto (identidade visual: nunca só cor). */
 .card-blocked { border-left: 4px solid var(--vt-danger); }
 .card-blocked::before { content: "Bloqueado"; display: inline-block; margin: 8px 12px 0; padding: 2px 8px;
   border-radius: 4px; background: var(--vt-danger); color: #fff; font-size: 12px; font-weight: 600; }

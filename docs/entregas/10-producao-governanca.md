@@ -1,6 +1,6 @@
 # Entrega 10 — Qualidade, operação e produção
 
-Data: 23/10/2026 • Spec: `specs/10-producao-governanca.md` • Branch: `spec-10-producao` (sobre `spec-09-custos`)
+Data: 23/10/2026 • Branch: `spec-10-producao` (sobre `spec-09-custos`)
 
 **Publicação em produção: NÃO realizada.** A spec exige autorização explícita, com plano revisável e backup verificado. O plano está em `docs/operacao/plano-producao.md`, e falta infraestrutura (servidor, domínio, TLS, SMTP), que depende de vocês.
 
@@ -31,7 +31,7 @@ Data: 23/10/2026 • Spec: `specs/10-producao-governanca.md` • Branch: `spec-1
     - Build das imagens.
     - Ações fixadas por commit.
   - **QA de ponta a ponta** (`fim-a-fim.js`), **linha de base de desempenho** (`desempenho.js`) e **auditoria de acessibilidade** com axe-core (`acessibilidade.js`).
-  - **Manuais** de usuário e de operação, **inventário de dependências**, **plano de produção** e a lista única de pendências em `RASTREABILIDADE.md`.
+  - **Manuais** de usuário e de operação, **inventário de dependências**, **plano de produção** e a lista única de pendências em `docs/entregas/README.md`.
 
 ## Arquivos
 
@@ -48,7 +48,7 @@ Data: 23/10/2026 • Spec: `specs/10-producao-governanca.md` • Branch: `spec-1
 | `vetor-back/vetor/tests/test_producao.py`, `test_custos.py`, `test_permissoes.py` | 6 testes novos e ajustes da regra do matriz |
 | `.github/workflows/ci.yml` | CI |
 | `scripts/qa/fim-a-fim.js`, `desempenho.js`, `acessibilidade.js` | verificações da SPEC-10 |
-| `docs/manual-usuario.md`, `docs/manual-operacao.md`, `docs/operacao/`, `docs/decisoes/0013-*`, `RASTREABILIDADE.md`, `README.md`, `docs/arquitetura.md` | documentação |
+| `docs/manual-usuario.md`, `docs/manual-operacao.md`, `docs/operacao/`, `docs/decisoes/0013-*`, `docs/entregas/README.md`, `README.md`, `docs/arquitetura.md` | documentação |
 
 **Migração:** `vetor.0011` cria duas tabelas próprias (`vetor_backupregistro`, `vetor_avisooperacional`).
 
@@ -66,7 +66,7 @@ Para a produção, veja `docs/operacao/plano-producao.md`. Para qualquer ambient
 | Licenças e avisos preservados | **Atendido.** As licenças dos 5 submódulos e os créditos no README foram mantidos, e o código-fonte é acessível (AGPL do front). A licença dos arquivos próprios está pendente. | `docs/operacao/dependencias.md` |
 | Manual do usuário e de operação | **Atendido** | `docs/manual-usuario.md`, `docs/manual-operacao.md` |
 | Restauração demonstrada | **Atendido.** Um backup cifrado foi restaurado num banco isolado em 10 s: 0 erros, nenhuma migração pendente, 13 arquivos de mídia. As contagens são iguais às do banco em uso; a única diferença é a auditoria, que ganhou as 2 linhas dos próprios registros. Não sobrou container nem rede. | `evidencias/10/backup-restauracao.txt` |
-| Riscos e pendências documentados | **Atendido:** lista única em `RASTREABILIDADE.md` e riscos em cada entrega | — |
+| Riscos e pendências documentados | **Atendido:** lista única em `docs/entregas/README.md` e riscos em cada entrega | — |
 | Conectores sem credencial claramente não configurados | **Atendido.** Com o `.env` vazio, GitHub, Kuma e Beszel aparecem como "não configurado" e respondem 503. Agente e telemetria aparecem como "contrato pronto, sem integração ativa", AWS/Oracle como "não implementado" e Azure como "não definido". | `test_saude_…`, `saude-operacional-1440.png` |
 | Deploy só com autorização, plano revisável e backup verificado | **Atendido: não publicado.** Plano pronto para revisão. | `docs/operacao/plano-producao.md` |
 | Auditoria (ator, ação, alvo, horário, resultado) sem senha, token ou lembrete | **Atendido** desde a SPEC-02, com testes por spec (lembretes, custos sem valores, tokens só como hash) | entregas 02, 05, 09 |

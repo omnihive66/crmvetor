@@ -1,4 +1,4 @@
-/* Barra lateral global da Vetor Sistemas (DESIGN.md: 248 px, recolhível; gaveta no celular).
+/* Barra lateral global da Vetor Sistemas (identidade visual: 248 px, recolhível; gaveta no celular).
    Carregada no app do Taiga (index.html) e nas telas próprias (vetor/...). */
 :root { --vt-shell-w: 248px; }
 html.vt-shell-recolhido { --vt-shell-w: 64px; }

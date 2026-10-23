@@ -1,6 +1,6 @@
 # Entrega 08 — Operação, pós-venda e adoção
 
-Data: 23/10/2026 • Spec: `specs/08-pos-venda-adocao.md` • Branch: `spec-08-pos-venda` (sobre `spec-07-monitoramento`)
+Data: 23/10/2026 • Branch: `spec-08-pos-venda` (sobre `spec-07-monitoramento`)
 
 ## O que foi reaproveitado, configurado e desenvolvido
 - **Reaproveitado:**
@@ -34,7 +34,7 @@ Data: 23/10/2026 • Spec: `specs/08-pos-venda-adocao.md` • Branch: `spec-08-p
 | `vetor-front/clientes/cliente.html` | aba Operação, próximo contato, produtos e alerta |
 | `infra/docker-compose.override.yml`, `.env.example` | retenção |
 | `scripts/qa/pos-venda.js` | QA pela tela, com eventos sintéticos |
-| `docs/integracoes/telemetria-uso.md`, `docs/decisoes/0011-pos-venda-e-adocao.md`, `docs/arquitetura.md`, `RASTREABILIDADE.md` | contrato, decisão e atualizações |
+| `docs/integracoes/telemetria-uso.md`, `docs/decisoes/0011-pos-venda-e-adocao.md`, `docs/arquitetura.md`, `docs/entregas/README.md` | contrato, decisão e atualizações |
 
 **Migração:** `vetor.0009` acrescenta uma coluna opcional em `vetor_cliente` e cria duas tabelas. Nenhuma tabela do Taiga é alterada.
 

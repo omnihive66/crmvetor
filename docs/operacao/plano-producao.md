@@ -11,7 +11,7 @@
 | Login do **usuário matriz** do financeiro (`VETOR_FINANCEIRO_USUARIOS`) | gestão | pendente |
 | Destino do backup fora do servidor e guarda da chave do backup | gestão / TI | pendente |
 | RPO 24 h / RTO 2 h (propostos) | gestão | validar |
-| Nome do sistema financeiro, provedor de MFA/SSO, antivírus para uploads, retenções | gestão | pendentes (RASTREABILIDADE) |
+| Nome do sistema financeiro, provedor de MFA/SSO, antivírus para uploads, retenções | gestão | pendentes (`docs/entregas/README.md`) |
 | Licença dos arquivos próprios da Vetor | gestão | pendente |
 | Repositório público (`omnihive66/crmvetor`) | gestão | **confirmar**: com o repositório público, qualquer pessoa vê o código (nunca os segredos) |
 

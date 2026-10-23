@@ -1,6 +1,6 @@
 # Entrega 04 — Projetos, fases e colaboração
 
-Data: 22/10/2026 • Spec: `specs/04-projetos-workflow.md` • Branch: `spec-04-projetos` (sobre `spec-03-clientes`)
+Data: 22/10/2026 • Branch: `spec-04-projetos` (sobre `spec-03-clientes`)
 
 ## O que foi reaproveitado, configurado e desenvolvido
 - **Reaproveitado (nativo):**
@@ -30,7 +30,7 @@ Data: 22/10/2026 • Spec: `specs/04-projetos-workflow.md` • Branch: `spec-04-
 | `vetor-front/demandas/index.html`, `ui/shell.js` | tela Demandas e item na barra lateral |
 | `vetor-front/build.py`, `locale/pt-br.json` | Kanban → modelo 1001; textos da opção; `isSaas` |
 | `scripts/qa/projetos.js` | QA pela interface |
-| `docs/decisoes/0007`, `docs/inventario-taiga.md`, `docs/arquitetura.md`, `RASTREABILIDADE.md` | atualizados |
+| `docs/decisoes/0007`, `docs/inventario-taiga.md`, `docs/arquitetura.md`, `docs/entregas/README.md` | atualizados |
 
 **Migrações:** `vetor.0004` (insere o modelo de projeto 1001; reversível) e `vetor.0005` (tabela `vetor_participacaoetapa`). Nenhuma tabela do Taiga é alterada. Projetos existentes **não** mudam de etapas: o modelo vale para projetos novos.
 

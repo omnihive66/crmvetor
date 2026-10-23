@@ -1,6 +1,6 @@
 # Entrega 07 — Uptime Kuma e Beszel
 
-Data: 23/10/2026 • Spec: `specs/07-monitoramento.md` • Branch: `spec-07-monitoramento` (sobre `spec-06-github`)
+Data: 23/10/2026 • Branch: `spec-07-monitoramento` (sobre `spec-06-github`)
 
 ## O que foi reaproveitado, configurado e desenvolvido
 - **Inspecionado antes de implementar:** o código-fonte do **Uptime Kuma 2.5.7** e do **Beszel v0.21.1** (versões atuais), e do Shoutrrr v0.22 que o Beszel usa.
@@ -37,7 +37,7 @@ Data: 23/10/2026 • Spec: `specs/07-monitoramento.md` • Branch: `spec-07-moni
 | `vetor-front/monitoramento/index.html`, `ui/shell.js`, `build.py` | tela e item na barra lateral |
 | `infra/docker-compose.override.yml`, `.env.example` | variáveis |
 | `scripts/qa/monitoramento.js` | QA com entregas no formato real e worker real |
-| `docs/integracoes/monitoramento.md`, `docs/decisoes/0010-monitoramento.md`, `docs/arquitetura.md`, `RASTREABILIDADE.md` | contrato, regras, configuração e decisão |
+| `docs/integracoes/monitoramento.md`, `docs/decisoes/0010-monitoramento.md`, `docs/arquitetura.md`, `docs/entregas/README.md` | contrato, regras, configuração e decisão |
 
 **Migração:** `vetor.0008` cria três tabelas próprias. Nenhuma tabela do Taiga é alterada.
 

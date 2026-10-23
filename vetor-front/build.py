@@ -13,7 +13,7 @@ from pathlib import Path
 html, src, out = map(Path, sys.argv[1:4])
 version = next(html.glob("v-*")).name  # pasta versionada do build oficial
 
-# Paleta do Taiga -> tokens do DESIGN.md
+# Paleta do Taiga -> tokens da identidade visual
 COLORS = {
     "#008aa8": "#087443", "#25a28c": "#087443", "#5cbaa9": "#087443",  # ação / links
     "#83eede": "#00d47a",                                              # destaque (texto escuro por cima)
