@@ -78,7 +78,7 @@ O financeiro fica **fechado para o usuário matriz**. Informe o login dele em `V
 
 ### Testes automáticos
 - `vetor/tests`: **123 passaram** (11 novos; o de permissão cobre a regra do usuário matriz).
-- Suíte oficial ampliada: ver `evidencias/09/pytest.txt`.
+- Suíte oficial ampliada: **1026 passaram, 17 falharam**. As 17 são as mesmas divergências intencionais da SPEC-08, sem nenhuma falha nova (`evidencias/09/pytest.txt`).
 
 ## Problemas encontrados e corrigidos no caminho
 - **"null" escrito na tela:** `replaceChildren` escreve `null` como texto (o `el()` descarta, mas o `replaceChildren` não). Apareceu na aba Custos e existia desde a SPEC-03 na aba Resumo do cliente, quando não havia observações. Corrigido nos quatro pontos.
