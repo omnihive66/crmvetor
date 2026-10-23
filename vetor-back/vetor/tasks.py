@@ -28,3 +28,9 @@ def processar_evento_monitoramento(self, evento_id):
 def limpar_monitoramento():
     from . import monitoramento
     return monitoramento.limpar_payloads()
+
+
+@app.task(name="vetor.tasks.limpar_uso")
+def limpar_uso():
+    from . import operacao
+    return operacao.limpar_uso()

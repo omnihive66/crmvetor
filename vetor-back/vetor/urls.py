@@ -3,7 +3,7 @@ from django.urls import include, re_path
 from taiga.base import routers
 from taiga.urls import urlpatterns as taiga_urlpatterns
 
-from . import api, api_clientes, api_github, api_lembretes, api_monitoramento, api_projetos, github, monitoramento
+from . import api, api_clientes, api_github, api_lembretes, api_monitoramento, api_operacao, api_projetos, github, monitoramento
 
 router = routers.DefaultRouter(trailing_slash=False)
 router.include_root_view = False  # a raiz /api/v1/ continua sendo a do Taiga
@@ -21,6 +21,7 @@ router.register(r"vetor/tokens-agente", api_lembretes.TokenAgenteViewSet, base_n
 router.register(r"vetor/repositorios", api_github.RepositorioViewSet, base_name="vetor-repositorios")
 router.register(r"vetor/vinculos-codigo", api_github.VinculoViewSet, base_name="vetor-vinculos-codigo")
 router.register(r"vetor/eventos-github", api_github.EventoViewSet, base_name="vetor-eventos-github")
+router.register(r"vetor/produtos-telemetria", api_operacao.ProdutoViewSet, base_name="vetor-produtos-telemetria")
 router.register(r"vetor/incidentes", api_monitoramento.IncidenteViewSet, base_name="vetor-incidentes")
 router.register(r"vetor/recursos-monitorados", api_monitoramento.RecursoViewSet, base_name="vetor-recursos-monitorados")
 router.register(r"vetor/eventos-monitoramento", api_monitoramento.EventoMonitoramentoViewSet, base_name="vetor-eventos-monitoramento")
@@ -38,6 +39,7 @@ urlpatterns = [
             api.ProjectModulesViewSet.as_view({"get": "modules", "patch": "modules"}), name="vetor-project-modules"),
     re_path(r"^api/v1/vetor/agente/lembretes/?$", api_lembretes.AgenteLembretesView.as_view(), name="vetor-agente-lembretes"),
     re_path(r"^api/v1/vetor/agente/demandas/?$", api_lembretes.AgenteDemandasView.as_view(), name="vetor-agente-demandas"),
+    re_path(r"^api/v1/vetor/uso/eventos/?$", api_operacao.IngestaoView.as_view(), name="vetor-uso-eventos"),
     re_path(r"^api/v1/vetor/github/webhook/?$", github.webhook, name="vetor-github-webhook"),
     re_path(r"^api/v1/vetor/monitoramento/(?P<provedor>[a-z]+)/webhook/?$", monitoramento.webhook, name="vetor-monitoramento-webhook"),
     re_path(r"^api/v1/", include(router.urls)),

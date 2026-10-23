@@ -1,0 +1,13 @@
+1. adoção antes → Funcionalidades: emitir_nota (1 pessoa(s), 1 uso(s)) · relatorio_vendas (1 pessoa(s), 1 uso(s))
+2. próximo contato salvo → 2026-11-05
+3. token gerado → vtpr_…
+4. ingestão → 200 {"recebidos": 5, "duplicados": 0}
+   evento com conteúdo (mensagem) → 400
+5. Relacionamento → RelacionamentoReuniões e pendências das demandas dos projetos deste cliente.Última reunião20/10/2026, 14:00 · abrir ataPróximo contato05/11/2026Pendências17 abertas · 1 bloqueadas · 1 vencidasPróximos passos combinados: Enviar cronograma da integração
+5. Disponibilidade do produto → Disponibilidade do produtoQuedas e retornos dos monitores (Uptime Kuma / Beszel) dos projetos deste cliente que você acompanha.[FICTÍCIO] web-249341 · Beszel · último evento: no ar em 23/10/2026, 07:440 queda(s) aberta(s) · 1 nos últimos 30 dias[FICTÍCIO] web-
+5. Infraestrutura → InfraestruturaAlertas de limite (CPU, memória, disco…) com fonte e horário. Não indicam uso pelo cliente.[FICTÍCIO] web-497621: cpu · acima do limiteFonte: Beszel · último alerta 23/10/2026, 07:48[FICTÍCIO] web-358048: cpu · acima do limiteFonte: Beszel · últi
+5. Adoção → AdoçãoUso real do produto, só quando o produto envia eventos. Login é contado separado de atividade.[FICTÍCIO] ERP WebDados sintéticos de validaçãoÚltimo acesso23/10/2026, 03:45 · login no produto [FICTÍCIO] ERP WebUsuários ativos (30 dias, Brasília)2Logins no
+   nota única de saúde na tela? false
+6. abrir ata → true #reuniao-1 | elemento existe: true
+7. celular → rolagem horizontal da página: false
+# 1ª rodada, cliente ainda sem produto: "1. adoção antes → Sem dados: nenhum produto deste cliente envia eventos de uso."
