@@ -67,7 +67,7 @@ Nenhuma para funcionar. Opcional:
 
 ### Testes automáticos
 - `vetor/tests`: **76 passaram** (18 novos). O teste de CSRF das rotas do agente falha sem `@csrf_exempt` e passa com ele (conferido).
-- Suíte oficial ampliada (mais `test_notifications.py`): ver `evidencias/05/pytest.txt`.
+- Suíte oficial ampliada (agora com `test_notifications.py`): **979 passaram, 17 falharam**. As 17 são as mesmas divergências intencionais da SPEC-04, sem nenhuma falha nova (`evidencias/05/pytest.txt`).
 
 ## Problemas encontrados e corrigidos no caminho
 - **Recorrente sem vencimento:** a validação deixava passar um lembrete recorrente criado sem data. Os testes pegaram; agora a regra considera também o valor já gravado (PATCH).
