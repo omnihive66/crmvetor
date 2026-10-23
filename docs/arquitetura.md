@@ -8,7 +8,7 @@ navegador ──► taiga-gateway (nginx :9000)
                ├─ /api/        taiga-back   (imagem vetor/taiga-back: API oficial + app Django `vetor`)
                ├─ /events      taiga-events (imagem vetor/taiga-events: assinatura só do que o usuário pode ver)
                └─ /media/      taiga-protected (imagem vetor/taiga-protected: anexos e exportações com token assinado)
-             taiga-async (Celery + beat: avisos de lembretes a cada minuto) ◄── taiga-async-rabbitmq
+             taiga-async (Celery + beat: avisos de lembretes, entregas do GitHub) ◄── taiga-async-rabbitmq
              taiga-db (PostgreSQL)
 ```
 
@@ -30,6 +30,7 @@ navegador ──► taiga-gateway (nginx :9000)
 | `vetor-front/{clientes,demandas,minhas-demandas,busca,administracao}/` | telas próprias servidas em `/vetor/...`: CRM, demandas entre projetos, lembretes privados e tokens do agente, busca global e Administração |
 | `vetor-events/`, `vetor-protected/` | imagens derivadas com uma troca verificada no código oficial (falham no build se o trecho mudar) |
 | `docs/agente.md` | contrato das rotas do agente externo (SPEC-05) |
+| `docs/integracoes/github.md` | o que sincroniza com o GitHub, em qual direção, e como configurar (SPEC-06) |
 | `infra/taiga-gateway.conf` | gateway oficial sem a seção que servia exportações sem token |
 | `scripts/qa/` | capturas de tela, teclado/zoom e menu por papel (Playwright) |
 

@@ -1,0 +1,12 @@
+1. ligar repositório → vetor-ficticio/portal-99749 ligado a [FICTÍCIO] Portal do Cliente. | URL do webhook: http://localhost:9000/api/v1/vetor/github/webhook
+2. PR aberto → 202 {"status":"recebido"}
+   worker vinculou → pr #12 open
+   reenvio da mesma entrega → 200 {"status":"duplicado","situacao":"processado"}
+   sem assinatura → 401 {"erro":"Assinatura ausente ou inválida."}
+3. estados → #12 merged, #13 closed | etapa mudou? false
+   total de vínculos (sem duplicar) → 2
+4. tela Demandas → Código: #12 [FICTÍCIO] Integrar login com SSO 299749PR #12 · TG-12 Login com SSOvetor-ficticio/portal-99749 · merged (concluído) · dev-ficticioPR #13 · TG-12 Login com SSOvetor-ficticio/portal-99749 · fechado sem merge · dev-ficticio
+5. push malformado → 202 {"status":"recebido"}
+   fila → falhou, tentativas 1, erro: KeyError: 'url'
+   reprocessar pela tela → Falhou de novo: KeyError: 'url'
+repositorio vetor-ficticio/portal-99749
