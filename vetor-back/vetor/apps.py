@@ -7,5 +7,6 @@ class VetorConfig(AppConfig):
     default_auto_field = "django.db.models.AutoField"
 
     def ready(self):
-        from . import sinais
+        from . import participacao, sinais
         sinais.conectar()
+        participacao.conectar()

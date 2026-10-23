@@ -118,3 +118,23 @@ class Reuniao(models.Model):
 
     class Meta:
         ordering = ["-data", "-id"]
+
+
+# Projetos (SPEC-04) ---------------------------------------------------------------------------
+
+class ParticipacaoEtapa(models.Model):
+    """Quem esteve em cada etapa de uma história, de quando até quando, e quem fez a mudança.
+    Gerada pelos signals a partir de status, responsável e colaboradores (não se edita à mão)."""
+    historia = models.ForeignKey("userstories.UserStory", on_delete=models.CASCADE, related_name="+")
+    usuario = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+")
+    usuario_nome = models.CharField(max_length=255)
+    status = models.ForeignKey("projects.UserStoryStatus", null=True, on_delete=models.SET_NULL, related_name="+")
+    status_nome = models.CharField(max_length=255)  # o nome da etapa pode mudar ou ela ser excluída depois
+    inicio = models.DateTimeField()
+    fim = models.DateTimeField(null=True, blank=True)
+    autor_inicio = models.CharField(max_length=255)
+    autor_fim = models.CharField(max_length=255, blank=True, default="")
+
+    class Meta:
+        ordering = ["inicio", "id"]
+        indexes = [models.Index(fields=["historia", "fim"])]

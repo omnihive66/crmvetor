@@ -1,0 +1,7 @@
+1. opção Kanban na tela → Kanban (fluxo Vetor) Entrada → Refinamento → A fazer → Desenvolvimento → Revisão → Testes → Concluído A metodologia Kanban é usada para dividir o desenvolvimento do projeto (qualquer tipo de projeto) em etapas. Um c
+   colunas criadas → Entrada | Refinamento | A fazer | Desenvolvimento | Revisão | Testes | Concluído | Arquivado
+2. teclado (seta para baixo) → Movida.
+   etapa gravada → Desenvolvimento
+3. conflito → Outra pessoa mudou esta demanda antes. A etapa mostrada agora é a gravada; escolha de novo se quiser. | select: Revisão | coluna Etapa: Revisão | banco: Revisão
+4. participação → #1 [FICTÍCIO] Configurar acessoPessoaEtapaInícioFimadmin.devA fazer22/10/2026, 20:31 · admin.dev22/10/2026, 20:31 · admin.devadmin.devDesenvolvimento22/10/2026, 20:31 · admin.dev22/10/2026, 20:31 · admin.devadmin.devRevi
+projeto ficticio-implantacao-6931

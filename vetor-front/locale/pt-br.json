@@ -97,7 +97,9 @@
       "ERROR_MAX_SIZE_EXCEEDED": "'{{fileName}}' ({{fileSize}}) é maior que o tamanho máximo permitido ({{maxFileSize}})."
     },
     "CREATE": {
-      "IMPORT_DESC": "Importar um projeto de outras plataformas"
+      "IMPORT_DESC": "Importar um projeto de outras plataformas",
+      "TEMPLATE_KANBAN": "Kanban (fluxo Vetor)",
+      "TEMPLATE_KANBAN_DESC": "Entrada → Refinamento → A fazer → Desenvolvimento → Revisão → Testes → Concluído"
     }
   },
   "LIGHTBOX": {
