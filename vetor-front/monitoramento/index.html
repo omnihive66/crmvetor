@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Monitoramento - Vetor Sistemas</title>
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="stylesheet" href="../ui/vetor-ui.css">
+<link rel="stylesheet" href="../ui/shell.css">
+<script src="../ui/shell.js" data-sprite="__SPRITE__"></script>
+<style>
+  section { margin-bottom: 28px; }
+  .secao { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .secao h2 { margin: 0; }
+  .chip.aberto { border-color: var(--danger); color: var(--danger); font-weight: 600; }
+  .chip.recuperado { border-color: var(--action); color: var(--action); }
+  .chip.indisponivel { border-color: var(--warning); color: var(--warning); font-weight: 600; }
+  .conectores { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+  .conectores dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 8px 0 0; font-size: 14px; }
+  .conectores dt { color: var(--muted); }
+  .linha li { display: grid; grid-template-columns: 150px 1fr; gap: 4px 12px; }
+  .linha .down, .linha .alerta { color: var(--danger); font-weight: 600; }
+  .linha .up, .linha .normal { color: var(--action); font-weight: 600; }
+  code { font-size: 13px; word-break: break-all; }
+  td select { width: auto; min-width: 180px; }
+</style>
+</head>
+<body>
+<div class="vt-topo"><nav aria-label="Você está em"><a href="../../">Visão geral</a> › Monitoramento</nav></div>
+<main>
+  <div class="vt-cabecalho"><div><h1>Monitoramento</h1>
+    <p class="vt-meta">Incidentes do Uptime Kuma e do Beszel nos projetos que você acompanha. Silêncio dos provedores não significa "no ar".</p></div></div>
+
+  <section aria-labelledby="t-incidentes">
+    <div class="secao"><h2 id="t-incidentes">Incidentes</h2>
+      <div><label class="sr" for="f-estado">Mostrar</label>
+        <select id="f-estado" style="width:auto"><option value="aberto">Abertos</option><option value="recuperado">Recuperados</option><option value="">Todos</option></select></div></div>
+    <div id="incidentes"><div class="card estado" role="status">Carregando…</div></div>
+  </section>
+
+  <div id="admin" hidden>
+    <section aria-labelledby="t-conectores">
+      <div class="secao"><h2 id="t-conectores">Conectores</h2></div>
+      <div id="conectores" class="conectores"></div>
+      <p class="vt-meta" id="regras"></p>
+    </section>
+    <section aria-labelledby="t-recursos">
+      <div class="secao"><h2 id="t-recursos">Recursos monitorados</h2></div>
+      <p class="vt-meta">Recurso novo chega em triagem (sem projeto). Escolha o projeto para ligar os incidentes dele; nada é associado por suposição.</p>
+      <div id="recursos"></div>
+    </section>
+    <section aria-labelledby="t-falhas">
+      <div class="secao"><h2 id="t-falhas">Eventos com falha</h2></div>
+      <div id="falhas"></div>
+    </section>
+  </div>
+</main>
+
+<dialog id="dlg-linha" aria-labelledby="dlg-linha-titulo">
+  <h2 id="dlg-linha-titulo">Linha do tempo</h2>
+  <div id="linha-conteudo"></div>
+  <div class="acoes"><button type="button" class="sec" onclick="this.closest('dialog').close()">Fechar</button></div>
+</dialog>
+
+<script>
+"use strict";
+const { el, chamar, RAIZ, quando } = Vetor;
+const ESTADO = { aberto: "Aberto", recuperado: "Recuperado" };
+const STATUS = { down: "fora do ar", up: "no ar", alerta: "acima do limite", normal: "normalizado", pendente: "pendente", manutencao: "manutenção", info: "aviso" };
+const SITUACAO = { telemetria_indisponivel: "Telemetria indisponível", incidente_aberto: "Incidente aberto", sem_dados: "Sem dados" };
+let projetos = [];
+const hora = d => d ? quando.format(new Date(d)) : "—";
+const tipo = t => t === "disponibilidade" ? "Disponibilidade" : t.startsWith("limite:") ? `Limite: ${t.slice(7)}` : t;
+const falha = (alvo, e, tentar) => alvo.replaceChildren(el("div", { class: "card estado", role: "alert" },
+  el("p", { class: "erro", text: e.status === 401 ? "Sua sessão expirou." : "Não foi possível carregar: " + e.message }),
+  e.status === 401 ? el("a", { href: `${RAIZ}login`, text: "Entrar novamente" }) : el("button", { type: "button", class: "sec", text: "Tentar novamente", onclick: tentar })));
+
+async function verLinha(id) {
+  const alvo = document.getElementById("linha-conteudo");
+  alvo.replaceChildren(el("p", { class: "vt-meta", role: "status", text: "Carregando…" })); document.getElementById("dlg-linha").showModal();
+  try {
+    const i = (await chamar(`/vetor/incidentes/${id}`)).corpo;
+    alvo.replaceChildren(
+      el("p", {}, el("strong", { text: `${i.recurso.nome} · ${tipo(i.tipo)}` }), ` — ${ESTADO[i.estado]}, ${i.ocorrencias} alerta(s), ${i.reincidencias} reincidência(s)`),
+      el("ul", { class: "lista-simples linha" }, ...i.linha_do_tempo.map(ev => el("li", {},
+        el("span", { text: hora(ev.ocorrido_em) }),
+        el("span", {}, el("span", { class: ev.status, text: STATUS[ev.status] || ev.status }), ev.resumo ? ` · ${ev.resumo}` : "",
+          ev.url_origem ? el("div", {}, el("a", { href: ev.url_origem, rel: "noopener", text: "origem" })) : null)))),
+      el("p", { class: "vt-meta", text: "Horários de Brasília. Eventos que chegaram fora de ordem aparecem na posição em que ocorreram e não mudam o estado." }));
+  } catch (e) { alvo.replaceChildren(el("p", { class: "erro", text: e.message })); }
+}
+
+async function carregarIncidentes() {
+  const alvo = document.getElementById("incidentes"), estado = document.getElementById("f-estado").value;
+  try {
+    const lista = (await chamar(`/vetor/incidentes${estado ? "?estado=" + estado : ""}`)).corpo;
+    if (!lista.length) return alvo.replaceChildren(el("div", { class: "card estado" }, el("p", { text: estado === "aberto" ? "Nenhum incidente aberto nos seus projetos." : "Nenhum incidente." })));
+    alvo.replaceChildren(el("div", { class: "card tabela" }, el("table", {}, el("caption", { class: "sr", text: "Incidentes" }),
+      el("thead", {}, el("tr", {}, ...["Recurso", "Projeto", "Tipo", "Estado", "Aberto", "Recuperado", "Alertas", "Demanda", ""].map(t => el("th", { scope: "col", text: t })))),
+      el("tbody", {}, ...lista.map(i => el("tr", {},
+        el("td", {}, el("strong", { text: i.recurso.nome }), el("div", { class: "vt-meta", text: `${i.recurso.provedor} · ${i.resumo}` })),
+        el("td", { text: i.recurso.projeto ? i.recurso.projeto.nome : "Em triagem" }),
+        el("td", { text: tipo(i.tipo) }),
+        el("td", {}, el("span", { class: `chip ${i.estado}`, text: ESTADO[i.estado] })),
+        el("td", { text: hora(i.aberto_em) }), el("td", { text: hora(i.recuperado_em) }),
+        el("td", { text: `${i.ocorrencias}${i.reincidencias ? ` (${i.reincidencias} reinc.)` : ""}` }),
+        el("td", {}, i.demanda ? el("a", { href: `${RAIZ}project/${i.demanda.projeto}/us/${i.demanda.ref}`, text: `#${i.demanda.ref}` }) : "—"),
+        el("td", {}, el("button", { type: "button", class: "sec", text: "Linha do tempo", "aria-label": `Linha do tempo de ${i.recurso.nome}`, onclick: () => verLinha(i.id) }))))))));
+  } catch (e) { falha(alvo, e, carregarIncidentes); }
+}
+
+async function carregarConectores() {
+  const alvo = document.getElementById("conectores");
+  try {
+    const d = (await chamar("/vetor/eventos-monitoramento/diagnostico")).corpo;
+    const base = new URL(`${RAIZ}api/v1/vetor/monitoramento/`, location.href).href;
+    alvo.replaceChildren(...d.conectores.map(c => el("div", { class: "card" },
+      el("div", { class: "secao" }, el("strong", { text: c.nome }),
+        el("span", { class: `chip ${c.telemetria === "disponivel" ? "recuperado" : "indisponivel"}`, text: c.telemetria === "disponivel" ? "Telemetria recebida" : "Telemetria indisponível" })),
+      el("dl", {},
+        el("dt", { text: "Configurado" }), el("dd", { text: c.configurado ? "sim" : "não (sem token no servidor)" }),
+        el("dt", { text: "Último sucesso" }), el("dd", { text: hora(c.ultimo_sucesso) }),
+        el("dt", { text: "Última falha" }), el("dd", { text: hora(c.ultima_falha) }),
+        el("dt", { text: "Recebidos (24 h)" }), el("dd", { text: String(c.recebidos_24h) }),
+        el("dt", { text: "Falhas pendentes" }), el("dd", { text: String(c.falhas_pendentes) }),
+        el("dt", { text: "Em triagem" }), el("dd", { text: String(c.em_triagem) }),
+        el("dt", { text: "Incidentes abertos" }), el("dd", { text: String(c.incidentes_abertos) }),
+        el("dt", { text: "Webhook" }), el("dd", {}, el("code", { text: `${base}${c.provedor}/webhook` }))))));
+    document.getElementById("regras").textContent = `Reincidência em até ${d.janela_min} min reabre o mesmo incidente · no máximo 1 e-mail por incidente a cada ${d.aviso_min} min ` +
+      `ao dono do projeto · conteúdo bruto apagado após ${d.retencao_dias} dias · disponibilidade histórica ${d.disponibilidade_historica}.`;
+  } catch (e) { falha(alvo, e, carregarConectores); }
+}
+
+async function carregarRecursos() {
+  const alvo = document.getElementById("recursos");
+  try {
+    const lista = (await chamar("/vetor/recursos-monitorados")).corpo;
+    if (!lista.length) return alvo.replaceChildren(el("p", { class: "vt-meta", text: "Nenhum recurso recebido ainda." }));
+    alvo.replaceChildren(el("div", { class: "card tabela" }, el("table", {}, el("caption", { class: "sr", text: "Recursos monitorados" }),
+      el("thead", {}, el("tr", {}, ...["Recurso", "Provedor", "Situação", "Projeto"].map(t => el("th", { scope: "col", text: t })))),
+      el("tbody", {}, ...lista.map(r => {
+        const msg = el("span", { role: "status", class: "vt-meta" });
+        const sel = el("select", { "aria-label": `Projeto de ${r.nome}` }, el("option", { value: "", text: "Em triagem (sem projeto)" }), ...projetos.map(p => el("option", { value: p.id, text: p.name })));
+        sel.value = r.projeto ? r.projeto.id : "";
+        sel.onchange = async () => {
+          sel.disabled = true; msg.textContent = "Salvando…";
+          try { await chamar(`/vetor/recursos-monitorados/${r.id}`, { method: "PATCH", body: JSON.stringify({ projeto: Number(sel.value) || null }) }); msg.className = "ok"; msg.textContent = "Salvo."; carregarIncidentes(); carregarConectores(); }
+          catch (e) { sel.value = r.projeto ? r.projeto.id : ""; msg.className = "erro"; msg.textContent = e.message; } finally { sel.disabled = false; }
+        };
+        const s = r.situacao;
+        return el("tr", {}, el("td", {}, el("strong", { text: r.nome }), el("div", { class: "vt-meta", text: `id ${r.id_externo}` })),
+          el("td", { text: r.provedor === "kuma" ? "Uptime Kuma" : "Beszel" }),
+          el("td", {}, s.codigo === "ultimo_evento" ? `Último evento: ${STATUS[s.status] || s.status} em ${hora(s.em)}` : el("span", { class: s.codigo === "sem_dados" ? "" : "chip indisponivel", text: SITUACAO[s.codigo] })),
+          el("td", {}, sel, " ", msg));
+      })))));
+  } catch (e) { falha(alvo, e, carregarRecursos); }
+}
+
+async function carregarFalhas() {
+  const alvo = document.getElementById("falhas");
+  try {
+    const lista = (await chamar("/vetor/eventos-monitoramento?processamento=falhou")).corpo;
+    if (!lista.length) return alvo.replaceChildren(el("p", { class: "vt-meta", text: "Nenhum evento com falha." }));
+    alvo.replaceChildren(el("div", { class: "card tabela" }, el("table", {}, el("caption", { class: "sr", text: "Eventos com falha" }),
+      el("thead", {}, el("tr", {}, ...["Recebido", "Provedor", "Recurso", "Tentativas", "Erro", ""].map(t => el("th", { scope: "col", text: t })))),
+      el("tbody", {}, ...lista.map(ev => {
+        const msg = el("span", { role: "status" }), tent = el("td", { text: String(ev.tentativas) }), erro = el("td", { class: "vt-meta", text: ev.erro });
+        const b = el("button", { type: "button", class: "sec", text: "Reprocessar", "aria-label": `Reprocessar evento ${ev.id}` });
+        b.onclick = async () => {
+          b.disabled = true; msg.textContent = "Reprocessando…";
+          try { const r = (await chamar(`/vetor/eventos-monitoramento/${ev.id}/reprocessar`, { method: "POST" })).corpo;
+            tent.textContent = String(r.tentativas); erro.textContent = r.erro;
+            msg.className = r.processamento === "falhou" ? "erro" : "ok"; msg.textContent = r.processamento === "falhou" ? "Falhou de novo." : "Processado.";
+            carregarIncidentes(); carregarConectores(); }
+          catch (e) { msg.className = "erro"; msg.textContent = e.message; } finally { b.disabled = false; }
+        };
+        return el("tr", {}, el("td", { text: hora(ev.recebido_em) }), el("td", { text: ev.provedor }), el("td", { text: ev.id_recurso || "—" }), tent, erro, el("td", {}, b, " ", msg));
+      })))));
+  } catch (e) { falha(alvo, e, carregarFalhas); }
+}
+
+async function iniciar() {
+  if (!Vetor.token()) return document.querySelector("main").replaceChildren(el("div", { class: "card estado" }, el("p", { text: "Entre no sistema para ver o monitoramento." }), el("a", { href: `${RAIZ}login`, text: "Ir para o login" })));
+  document.getElementById("f-estado").onchange = carregarIncidentes;
+  carregarIncidentes();
+  const id = new URLSearchParams(location.search).get("incidente");
+  if (id) verLinha(id);
+  const me = await Vetor.me();
+  if (!me || !me.administrador) return;
+  document.getElementById("admin").hidden = false;
+  try { projetos = (await chamar("/projects")).corpo; } catch (e) { console.warn("Projetos:", e.message); }
+  carregarConectores(); carregarRecursos(); carregarFalhas();
+}
+iniciar();
+</script>
+</body>
+</html>
