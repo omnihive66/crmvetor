@@ -245,3 +245,61 @@ class VinculoCodigo(models.Model):
     class Meta:
         ordering = ["tipo", "-atualizado_no_provedor"]
         constraints = [models.UniqueConstraint(fields=["historia", "tipo", "id_externo"], name="vetor_vinculo_unico")]
+
+
+class RecursoMonitorado(models.Model):
+    """Monitor do Kuma ou servidor do Beszel. Sem projeto = triagem: nada é associado por suposição."""
+    provedor = models.CharField(max_length=10)  # kuma, beszel
+    id_externo = models.CharField(max_length=100)
+    nome = models.CharField(max_length=200)
+    projeto = models.ForeignKey("projects.Project", null=True, blank=True, on_delete=models.SET_NULL, related_name="vetor_recursos")
+    criado_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["provedor", "nome"]
+        constraints = [models.UniqueConstraint(fields=["provedor", "id_externo"], name="vetor_recurso_unico")]
+
+
+class Incidente(models.Model):
+    """Um por recurso e tipo enquanto aberto; reincidência dentro da janela reabre o mesmo."""
+    ABERTO, RECUPERADO = "aberto", "recuperado"
+    recurso = models.ForeignKey(RecursoMonitorado, on_delete=models.CASCADE, related_name="incidentes")
+    tipo = models.CharField(max_length=60)  # disponibilidade, limite:cpu, ...
+    estado = models.CharField(max_length=10, default=ABERTO, db_index=True)
+    severidade = models.CharField(max_length=10)
+    resumo = models.CharField(max_length=500)
+    aberto_em = models.DateTimeField()
+    recuperado_em = models.DateTimeField(null=True, blank=True)
+    ultimo_evento_em = models.DateTimeField()  # ocorrência mais recente aplicada: evento mais antigo não muda o estado
+    ocorrencias = models.PositiveIntegerField(default=1)
+    reincidencias = models.PositiveIntegerField(default=0)
+    historia = models.ForeignKey("userstories.UserStory", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    notificado_em = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-aberto_em"]
+
+
+class EventoMonitoramento(models.Model):
+    """Contrato do evento (SPEC-07) + estado do processamento. O payload guardado é só a lista de campos permitidos."""
+    RECEBIDO, PROCESSADO, FALHOU = "recebido", "processado", "falhou"
+    provedor = models.CharField(max_length=10)
+    id_externo = models.CharField(max_length=200, null=True, blank=True)  # Beszel não tem: sem deduplicação por entrega
+    id_recurso = models.CharField(max_length=100, blank=True, default="")
+    recurso = models.ForeignKey(RecursoMonitorado, null=True, blank=True, on_delete=models.SET_NULL, related_name="eventos")
+    incidente = models.ForeignKey(Incidente, null=True, blank=True, on_delete=models.SET_NULL, related_name="eventos")
+    tipo = models.CharField(max_length=60)
+    status = models.CharField(max_length=12)  # down, up, pendente, manutencao, alerta, normal, info
+    severidade = models.CharField(max_length=10)
+    resumo = models.CharField(max_length=500)
+    url_origem = models.CharField(max_length=500, blank=True, default="")
+    ocorrido_em = models.DateTimeField()
+    recebido_em = models.DateTimeField(auto_now_add=True)
+    payload = models.JSONField(null=True)  # limpo depois da retenção
+    processamento = models.CharField(max_length=12, default=RECEBIDO, db_index=True)
+    tentativas = models.PositiveSmallIntegerField(default=0)
+    erro = models.TextField(blank=True, default="")
+
+    class Meta:
+        ordering = ["ocorrido_em", "id"]
+        constraints = [models.UniqueConstraint(fields=["provedor", "id_externo"], name="vetor_evento_monitor_unico")]

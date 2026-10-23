@@ -42,6 +42,7 @@
       ["vetor/minhas-demandas/", "Minhas demandas", "icon-bell", /^vetor\/minhas-demandas\//],
       ["vetor/demandas/", "Demandas", "icon-clipboard", /^vetor\/demandas\//],
       ["projects/", "Projetos", "icon-folder", /^(projects|project)\//],
+      ["vetor/monitoramento/", "Monitoramento", "icon-activity", /^vetor\/monitoramento\//],
     ];
     if (me && me.administrador) lista.push(["vetor/administracao/", "Administração", "icon-settings", /^vetor\/administracao\//]);
     return lista;

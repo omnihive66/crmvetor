@@ -146,7 +146,7 @@ write("conf.json.template", conf)
 for name in ("logo-vetor-original.jpg", "favicon.svg"):
     shutil.copy(src / name, out / "vetor" / name)
 # Telas próprias e a base compartilhada (ui/): o sprite de ícones do Taiga fica na pasta versionada.
-for pasta in ("ui", "administracao", "clientes", "busca", "demandas", "minhas-demandas"):
+for pasta in ("ui", "administracao", "clientes", "busca", "demandas", "minhas-demandas", "monitoramento"):
     for arq in (src / pasta).iterdir():
         texto = arq.read_text(encoding="utf-8").replace("__SPRITE__", f"{version}/svg/sprite.svg")
         write(f"vetor/{pasta}/{arq.name}", texto)

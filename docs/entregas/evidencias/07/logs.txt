@@ -1,0 +1,11 @@
+VETOR_KUMA_TOKEN em vetor-taiga-back-1: 0
+VETOR_KUMA_TOKEN em vetor-taiga-async-1: 0
+VETOR_KUMA_TOKEN em vetor-taiga-gateway-1: 0
+VETOR_BESZEL_TOKEN em vetor-taiga-back-1: 0
+VETOR_BESZEL_TOKEN em vetor-taiga-async-1: 0
+VETOR_BESZEL_TOKEN em vetor-taiga-gateway-1: 0
+# linhas do conector (só provedor, id do evento, recurso, status):
+INFO:2026-10-23 10:48:19,879: kuma evento=21 recurso=497621 status=down processamento=processado
+INFO:2026-10-23 10:48:21,021: beszel evento=22 recurso=qa497621 status=down processamento=processado
+INFO:2026-10-23 10:48:21,033: beszel evento=23 recurso=qa497621 status=alerta processamento=processado
+INFO:2026-10-23 10:48:21,057: beszel evento=24 recurso=qa497621 status=up processamento=processado

@@ -1,0 +1,20 @@
+0. conectores antes → Telemetria recebida | Telemetria recebida
+   sem token → 401
+1. queda (desconhecido) → 202
+   em triagem → [FICTÍCIO] API Portal 497621, projeto: null
+   mapeado pela tela → Salvo.
+2. incidentes do recurso → 1 | estado: recuperado | alertas: 3 | demanda: #15 [Incidente] [FICTÍCIO] API Portal 497621 fora do ar
+   linha do tempo → 09:00 down, 09:05 down, 09:10 down, 09:15 down, 09:20 up
+   payload sem credenciais → url_origem https://api.ficticio.example/saude
+   demanda continua aberta → true
+3. Beszel → 3 eventos processados | recurso em triagem: [FICTÍCIO] web-497621
+   incidentes → disponibilidade: recuperado, limite:cpu: aberto | demanda (triagem): nenhuma
+4. conectores depois → Telemetria recebida | Telemetria recebida
+   alguma porcentagem de disponibilidade na tela? false
+5. celular → rolagem horizontal da página: false
+recurso [FICTÍCIO] API Portal 497621
+# 1ª rodada, ambiente sem nenhum evento recebido: "0. conectores antes → Telemetria indisponível | Telemetria indisponível"
+# e-mails do worker ao dono do projeto (assuntos):
+vetor-taiga-back-1:
+      1 Incidente_aberto
+vetor-taiga-async-1:
