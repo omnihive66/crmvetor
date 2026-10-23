@@ -16,6 +16,12 @@ def aplicar(s):
     s["VETOR_DOCUMENTO_MAX_MB"] = int(os.getenv("VETOR_DOCUMENTO_MAX_MB", "25"))
     s["VETOR_DOCUMENTO_EXTENSOES"] = ["pdf", "doc", "docx", "odt", "xls", "xlsx", "ods", "csv", "ppt", "pptx", "odp",
                                       "txt", "md", "png", "jpg", "jpeg", "zip"]
+    # Lembretes (SPEC-05): o worker do Taiga roda com beat (-B); a Vetor só acrescenta esta entrada.
+    s["CELERY_BEAT_SCHEDULE"] = {**s.get("CELERY_BEAT_SCHEDULE", {}),
+                                 "vetor-lembretes": {"task": "vetor.tasks.avisar_lembretes", "schedule": 60.0}}
+    s["VETOR_AGENTE_LIMITE_MINUTO"] = int(os.getenv("VETOR_AGENTE_LIMITE_MINUTO", "30"))
+    # O Taiga desliga loggers não declarados: sem isto, vetor.agente e vetor.lembretes não aparecem (só ids, nunca conteúdo).
+    s["LOGGING"]["loggers"]["vetor"] = {"handlers": ["console"], "level": "INFO", "propagate": False}
     # Nome do sistema financeiro/contratual externo ainda não confirmado (README): fica configurável.
     s["VETOR_SISTEMA_FINANCEIRO"] = {"nome": os.getenv("VETOR_SISTEMA_FINANCEIRO_NOME", ""),
                                      "url": os.getenv("VETOR_SISTEMA_FINANCEIRO_URL", "")}  # o feedback oficial envia para support@taiga.io

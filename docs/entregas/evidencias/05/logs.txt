@@ -1,0 +1,7 @@
+# taiga-async (beat + worker): aviso registra só ids
+[2026-10-23 00:22:02,353: INFO/Beat] Scheduler: Sending due task vetor-lembretes (vetor.tasks.avisar_lembretes)
+[2026-10-23 00:22:02,385: INFO/ForkPoolWorker-3] lembrete 1 avisado (dono 5)
+[2026-10-23 00:23:02,349: INFO/Beat] Scheduler: Sending due task vetor-lembretes (vetor.tasks.avisar_lembretes)
+# taiga-back: chamada do agente com título "[FICTÍCIO] conteúdo que não pode ir ao log"
+INFO:2026-10-23 00:24:25,630: agente token=vtag_o7MMjgu escopo=lembretes status=201
+# ocorrências do título nos logs do taiga-back: 0
