@@ -31,6 +31,7 @@ navegador ──► taiga-gateway (nginx :9000)
 | `vetor-events/`, `vetor-protected/` | imagens derivadas com uma troca verificada no código oficial (falham no build se o trecho mudar) |
 | `docs/agente.md` | contrato das rotas do agente externo (SPEC-05) |
 | `docs/integracoes/monitoramento.md` | contrato do evento, regras de incidente e configuração do Kuma e do Beszel (SPEC-07) |
+| `docs/integracoes/telemetria-uso.md` | contrato de eventos de uso dos produtos dos clientes (SPEC-08) |
 | `docs/integracoes/github.md` | o que sincroniza com o GitHub, em qual direção, e como configurar (SPEC-06) |
 | `infra/taiga-gateway.conf` | gateway oficial sem a seção que servia exportações sem token |
 | `scripts/qa/` | capturas de tela, teclado/zoom e menu por papel (Playwright) |

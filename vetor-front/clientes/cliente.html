@@ -18,12 +18,13 @@
 const { el, chamar } = Vetor;
 const params = new URLSearchParams(location.search);
 const ID = Number(params.get("id"));
-const ABAS = [["resumo", "Resumo"], ["projetos", "Projetos"], ["contatos", "Contatos"], ["documentos", "Documentos"], ["reunioes", "Reuniões"], ["historico", "Histórico"]];
+const ABAS = [["resumo", "Resumo"], ["operacao", "Operação"], ["projetos", "Projetos"], ["contatos", "Contatos"], ["documentos", "Documentos"], ["reunioes", "Reuniões"], ["historico", "Histórico"]];
 const ACOES = {
   "cliente.criado": "Cliente cadastrado", "cliente.alterado": "Dados alterados", "cliente.arquivado": "Cliente arquivado", "cliente.reativado": "Cliente reativado",
   "cliente.projeto_vinculado": "Projeto vinculado", "cliente.projeto_desvinculado": "Projeto desvinculado",
   "contato.criado": "Contato adicionado", "contato.alterado": "Contato alterado", "contato.removido": "Contato removido",
   "documento.adicionado": "Documento adicionado", "documento.removido": "Documento removido", "documento.copiado_como_modelo": "Documento copiado como modelo",
+  "produto_telemetria.criado": "Produto com telemetria adicionado", "produto_telemetria.ajustado": "Alerta de uso ajustado", "produto_telemetria.revogado": "Token de produto revogado",
   "reuniao.registrada": "Reunião registrada", "reuniao.alterada": "Reunião alterada", "reuniao.removida": "Reunião removida", "reuniao.demanda_criada": "Demanda criada a partir de reunião",
 };
 let cliente, opcoes;
@@ -34,6 +35,7 @@ const tamanho = b => b > 1048576 ? (b / 1048576).toFixed(1) + " MB" : Math.max(1
 const nomeCiclo = c => (opcoes.ciclos.find(x => x.id === c) || {}).nome || c;
 const msgErro = (alvo, e) => { alvo.className = "erro"; alvo.textContent = e.message; };
 const vazio = texto => el("p", { class: "estado", text: texto });
+const diaData = d => d ? new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeZone: "UTC" }).format(new Date(d + "T00:00:00Z")) : "";
 function falha(e, tentar) {
   main.replaceChildren(el("div", { class: "card estado", role: "alert" },
     el("p", { class: "erro", text: e.status === 404 ? "Cliente não encontrado ou fora do seu acesso." : e.status === 401 ? "Sua sessão expirou." : "Não foi possível carregar: " + e.message }),
@@ -68,7 +70,7 @@ function desenhar() {
   });
   main.replaceChildren(cab, abas, painel);
   painel.setAttribute("aria-labelledby", `aba-${aba}`);
-  ({ resumo, projetos, contatos, documentos, reunioes, historico })[aba](painel);
+  ({ resumo, operacao, projetos, contatos, documentos, reunioes, historico })[aba](painel);
 }
 function trocar(id) { params.set("aba", id); history.replaceState(null, "", `?${params}`); desenhar(); }
 
@@ -93,6 +95,7 @@ async function resumo(p) {
   item("CNPJ", cliente.cnpj ? cliente.cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5") : cliente.estrangeiro ? `Estrangeiro${cliente.documento_estrangeiro ? " · " + cliente.documento_estrangeiro : ""}` : "Não informado (prospect)");
   item("Localização", [cliente.cidade, cliente.uf, cliente.pais].filter(Boolean).join(" / "));
   item(`Código no ${fin.nome || "sistema financeiro"}`, cliente.codigo_financeiro);
+  item("Próximo contato", diaData(cliente.proximo_contato));
   const ultima = el("div", { class: "vt-meta", text: "Carregando reuniões…" });
   p.replaceChildren(el("h2", { text: "Resumo" }), dl,
     cliente.observacoes ? el("p", { class: "pre", text: cliente.observacoes }) : null,
@@ -115,6 +118,7 @@ function formResumo(p) {
     el("label", {}, "Responsável", el("select", { name: "responsavel" }, el("option", { value: "", text: "—" }), ...opcoes.pessoas.map(x => el("option", { value: x.id, text: x.nome })))),
     el("label", {}, "Ciclo", el("select", { name: "ciclo" }, ...opcoes.ciclos.map(c => el("option", { value: c.id, text: c.nome })))),
     campo(`Código no ${opcoes.sistema_financeiro.nome || "sistema financeiro"}`, "codigo_financeiro", cliente.codigo_financeiro, { max: 60 }),
+    campo("Próximo contato", "proximo_contato", cliente.proximo_contato, { tipo: "date" }),
     campo("Observações", "observacoes", cliente.observacoes, { tag: "textarea", largo: true, max: 10000 })));
   const msg = el("p", { role: "alert" });
   f.append(msg, el("div", { class: "acoes" }, el("button", { type: "submit", text: "Salvar" }), el("button", { type: "button", class: "sec", text: "Cancelar", onclick: desenhar })));
@@ -122,10 +126,90 @@ function formResumo(p) {
   f.onsubmit = async ev => {
     ev.preventDefault();
     const d = Object.fromEntries(["nome", "razao_social", "cnpj", "documento_estrangeiro", "cidade", "uf", "pais", "ciclo", "codigo_financeiro", "observacoes"].map(k => [k, f[k].value]));
+    d.proximo_contato = f.proximo_contato.value || null;
     d.estrangeiro = f.estrangeiro.checked; d.responsavel = f.responsavel.value ? Number(f.responsavel.value) : null;
     try { cliente = (await chamar(`/vetor/clientes/${ID}`, { method: "PATCH", body: JSON.stringify(d) })).corpo; desenhar(); } catch (e) { msgErro(msg, e); }
   };
   p.replaceChildren(f); f.nome.focus();
+}
+
+// Operação (SPEC-08): quatro sinais separados, nunca uma nota única ------------------------
+const SITUACAO = { telemetria_indisponivel: "Telemetria indisponível", fora_do_ar: "Fora do ar agora", sem_dados: "Sem dados de disponibilidade" };
+const ALERTA = { desligado: "Alerta de desuso desligado", ok: "Em uso", telemetria_parada: "Telemetria parada: o produto não envia eventos há mais de 2 dias (não é desuso)",
+  possivel_desuso: "Possível desuso", em_excecao: "Alerta em exceção" };
+function bloco(titulo, explica, ...conteudo) {
+  return el("section", { class: "card", "aria-label": titulo }, el("h3", { style: "margin:0 0 4px", text: titulo }), el("p", { class: "vt-meta", style: "margin:0 0 8px", text: explica }), ...conteudo);
+}
+async function operacao(p) {
+  p.replaceChildren(el("h2", { text: "Operação e pós-venda" }), el("p", { class: "vt-meta", role: "status", text: "Carregando…" }));
+  let d, me;
+  try { [d, me] = await Promise.all([chamar(`/vetor/clientes/${ID}/painel`).then(r => r.corpo), Vetor.me()]); }
+  catch (e) { return p.replaceChildren(el("h2", { text: "Operação e pós-venda" }), el("p", { class: "erro", role: "alert", text: e.message })); }
+  const q = Vetor.quando, r = d.relacionamento;
+  const rel = bloco("Relacionamento", "Reuniões e pendências das demandas dos projetos deste cliente.",
+    el("dl", { class: "campos" },
+      el("div", {}, el("dt", { class: "vt-meta", text: "Última reunião" }), el("dd", { style: "margin:0" }, r.ultima_reuniao
+        ? el("span", {}, `${q.format(new Date(r.ultima_reuniao.data))} · `, el("a", { href: `?id=${ID}&aba=reunioes#reuniao-${r.ultima_reuniao.id}`, text: "abrir ata" })) : "Nenhuma")),
+      el("div", {}, el("dt", { class: "vt-meta", text: "Próximo contato" }), el("dd", { style: "margin:0", text: diaData(r.proximo_contato) || "Não agendado" })),
+      el("div", {}, el("dt", { class: "vt-meta", text: "Pendências" }), el("dd", { style: "margin:0", text: `${r.pendencias.abertas} abertas · ${r.pendencias.bloqueadas} bloqueadas · ${r.pendencias.vencidas} vencidas` }))),
+    r.ultima_reuniao && r.ultima_reuniao.proximos_passos ? el("p", { class: "pre", text: `Próximos passos combinados: ${r.ultima_reuniao.proximos_passos}` }) : null);
+  const disp = bloco("Disponibilidade do produto", "Quedas e retornos dos monitores (Uptime Kuma / Beszel) dos projetos deste cliente que você acompanha.",
+    d.disponibilidade.length ? el("ul", { class: "lista-simples" }, ...d.disponibilidade.map(x => el("li", {}, el("strong", { text: x.recurso }), ` · ${x.fonte} · `,
+      x.situacao.codigo === "ultimo_evento" ? `último evento: ${x.situacao.status === "down" ? "fora do ar" : x.situacao.status === "up" ? "no ar" : x.situacao.status} em ${q.format(new Date(x.situacao.em))}` : SITUACAO[x.situacao.codigo],
+      el("div", { class: "vt-meta", text: `${x.quedas_abertas} queda(s) aberta(s) · ${x.quedas_30d} nos últimos 30 dias` }))))
+      : el("p", { class: "vt-meta", text: "Sem dados: nenhum monitor ligado aos projetos deste cliente." }));
+  const infra = bloco("Infraestrutura", "Alertas de limite (CPU, memória, disco…) com fonte e horário. Não indicam uso pelo cliente.",
+    d.infraestrutura.length ? el("ul", { class: "lista-simples" }, ...d.infraestrutura.map(x => el("li", {}, el("strong", { text: `${x.recurso}: ${x.metrica}` }),
+      ` · ${x.estado === "aberto" ? "acima do limite" : "normalizado"}`, el("div", { class: "vt-meta", text: `Fonte: ${x.fonte} · último alerta ${q.format(new Date(x.ultimo_evento_em))}` }))))
+      : el("p", { class: "vt-meta", text: "Sem alertas de limite nos últimos 30 dias. Métricas contínuas não são coletadas." }));
+  const adocao = bloco("Adoção", "Uso real do produto, só quando o produto envia eventos. Login é contado separado de atividade.",
+    d.adocao.length ? el("div", {}, ...d.adocao.map(a => cartaoAdocao(a, me))) : el("p", { class: "vt-meta", text: "Sem dados: nenhum produto deste cliente envia eventos de uso." }),
+    me && me.administrador ? formProduto(p) : null);
+  p.replaceChildren(el("h2", { text: "Operação e pós-venda" }),
+    el("p", { class: "vt-meta", text: "Quatro sinais separados de propósito: queda, CPU alta e baixa adoção são problemas diferentes. Não há nota única de saúde." }),
+    el("div", { class: "grade", style: "grid-template-columns:repeat(auto-fit,minmax(320px,1fr))" }, rel, disp, infra, adocao));
+}
+function cartaoAdocao(a, me) {
+  const q = Vetor.quando, titulo = el("p", { style: "margin:8px 0 4px" }, el("strong", { text: a.produto.nome }),
+    a.sintetico ? el("span", { class: "chip", style: "margin-left:8px", text: "Dados sintéticos de validação" }) : null,
+    a.revogado ? el("span", { class: "chip", style: "margin-left:8px", text: "Token revogado" }) : null);
+  if (a.situacao === "sem_dados") return el("div", {}, titulo, el("p", { class: "vt-meta", text: "Sem dados: o produto ainda não enviou eventos." }));
+  const al = a.alerta, textoAlerta = al.codigo === "possivel_desuso" ? `Possível desuso: nenhuma atividade há mais de ${al.dias} dias, com o produto enviando eventos`
+    : al.codigo === "em_excecao" ? `Alerta em exceção até ${diaData(al.ate)}${al.motivo ? ` (${al.motivo})` : ""}` : ALERTA[al.codigo];
+  return el("div", {}, titulo, el("dl", { class: "campos" },
+    el("div", {}, el("dt", { class: "vt-meta", text: "Último acesso" }), el("dd", { style: "margin:0", text: a.ultimo_acesso ? `${q.format(new Date(a.ultimo_acesso.em))} · ${a.ultimo_acesso.origem}` : "Nenhum login registrado" })),
+    el("div", {}, el("dt", { class: "vt-meta", text: `Usuários ativos (${a.janela_dias} dias, Brasília)` }), el("dd", { style: "margin:0", text: String(a.usuarios_ativos) })),
+    el("div", {}, el("dt", { class: "vt-meta", text: "Logins no período" }), el("dd", { style: "margin:0", text: String(a.logins_na_janela) })),
+    el("div", {}, el("dt", { class: "vt-meta", text: "Atualizado em" }), el("dd", { style: "margin:0", text: q.format(new Date(a.atualizado_em)) }))),
+    a.funcionalidades.length ? el("p", { class: "vt-meta", text: "Funcionalidades: " + a.funcionalidades.map(x => `${x.funcionalidade} (${x.usuarios} pessoa(s), ${x.eventos} uso(s))`).join(" · ") }) : null,
+    el("p", { class: al.codigo === "possivel_desuso" ? "erro" : "vt-meta", text: textoAlerta }),
+    editar() ? formAlerta(a) : null);
+}
+function formAlerta(a) {
+  const f = el("form", { novalidate: true, class: "campos" },
+    el("label", {}, "Alerta de desuso após (dias)", el("input", { type: "number", name: "dias", min: 1, max: 365, value: a.config.alerta_desuso_dias || "" })),
+    el("label", {}, "Exceção até", el("input", { type: "date", name: "ate", value: a.config.excecao_ate || "" })),
+    el("label", {}, "Motivo da exceção", el("input", { type: "text", name: "motivo", maxlength: 200, value: a.config.motivo || "" })),
+    el("div", { class: "acoes" }, el("button", { type: "submit", class: "sec", text: "Salvar alerta" })));
+  const msg = el("span", { role: "status" }); f.append(msg);
+  f.onsubmit = async ev => { ev.preventDefault();
+    try { await chamar(`/vetor/produtos-telemetria/${a.produto.id}`, { method: "PATCH", body: JSON.stringify({ alerta_desuso_dias: Number(f.dias.value) || null, alerta_excecao_ate: f.ate.value || null, alerta_excecao_motivo: f.motivo.value }) });
+      msg.className = "ok"; msg.textContent = "Salvo."; } catch (e) { msgErro(msg, e); } };
+  return el("details", {}, el("summary", { text: "Ajustar alerta de desuso (contrato/contexto)" }), f);
+}
+function formProduto(p) {
+  const f = el("form", { novalidate: true, class: "campos", style: "margin-top:12px" },
+    el("label", {}, "Produto", el("input", { type: "text", name: "nome", maxlength: 120, required: true })),
+    el("label", {}, "Chave (product_id)", el("input", { type: "text", name: "chave", maxlength: 60, required: true })),
+    el("label", { class: "check" }, el("input", { type: "checkbox", name: "sintetico" }), "Dados sintéticos (validação)"),
+    el("div", { class: "acoes" }, el("button", { type: "submit", class: "sec", text: "Gerar token de ingestão" })));
+  const msg = el("div", { role: "status" }); f.append(msg);
+  f.onsubmit = async ev => { ev.preventDefault();
+    try { const r = (await chamar("/vetor/produtos-telemetria", { method: "POST", body: JSON.stringify({ cliente: ID, nome: f.nome.value, chave: f.chave.value, sintetico: f.sintetico.checked }) })).corpo;
+      msg.replaceChildren(el("p", { class: "ok", text: "Copie agora (não será mostrado de novo) e configure no produto: Authorization: Produto <token>" }),
+        el("p", { class: "pre", style: "word-break:break-all;font-family:ui-monospace,monospace", text: r.token })); f.reset(); }
+    catch (e) { msgErro(msg, e); } };
+  return el("details", {}, el("summary", { text: "Adicionar produto com telemetria (Administrador)" }), f);
 }
 
 // Projetos ---------------------------------------------------------------------------------

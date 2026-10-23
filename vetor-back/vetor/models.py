@@ -54,6 +54,7 @@ class Cliente(models.Model):
                                     related_name="vetor_clientes")
     ciclo = models.CharField(max_length=20, choices=CICLOS, default=NEGOCIACAO)
     codigo_financeiro = models.CharField(max_length=60, blank=True, default="")  # id no sistema financeiro externo
+    proximo_contato = models.DateField(null=True, blank=True)  # SPEC-08: relacionamento
     observacoes = models.TextField(blank=True, default="")
     arquivado = models.BooleanField(default=False)
     criado_em = models.DateTimeField(auto_now_add=True)
@@ -303,3 +304,40 @@ class EventoMonitoramento(models.Model):
     class Meta:
         ordering = ["ocorrido_em", "id"]
         constraints = [models.UniqueConstraint(fields=["provedor", "id_externo"], name="vetor_evento_monitor_unico")]
+
+
+class ProdutoTelemetria(models.Model):
+    """Produto entregue a um cliente que envia eventos de uso. Sem produto (ou sem eventos), adoção = "sem dados"."""
+    cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, related_name="produtos_telemetria")
+    nome = models.CharField(max_length=120)
+    chave = models.CharField(max_length=60)  # product_id enviado pelo produto
+    prefixo = models.CharField(max_length=12)
+    hash = models.CharField(max_length=64, unique=True)  # sha256 do token de ingestão; o token nunca é guardado
+    sintetico = models.BooleanField(default=False)  # dados de validação: sempre identificados na tela
+    janela_ativos_dias = models.PositiveSmallIntegerField(default=30)  # "usuários ativos" = atividade nos últimos N dias (Brasília)
+    alerta_desuso_dias = models.PositiveSmallIntegerField(null=True, blank=True)  # vazio = sem alerta de desuso
+    alerta_excecao_ate = models.DateField(null=True, blank=True)  # exceção por contrato/contexto (férias, sazonalidade)
+    alerta_excecao_motivo = models.CharField(max_length=200, blank=True, default="")
+    revogado_em = models.DateTimeField(null=True, blank=True)
+    criado_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["nome"]
+        constraints = [models.UniqueConstraint(fields=["cliente", "chave"], name="vetor_produto_chave_unica")]
+
+
+class EventoUso(models.Model):
+    """Evento pseudonimizado e mínimo: quem (pseudônimo re-cifrado no servidor), o quê (tipo) e quando. Nada de conteúdo."""
+    LOGIN, ATIVIDADE, PULSO = "login", "atividade", "pulso"  # pulso = o produto está enviando (não é uso)
+    produto = models.ForeignKey(ProdutoTelemetria, on_delete=models.CASCADE, related_name="eventos")
+    id_externo = models.CharField(max_length=100)
+    tipo = models.CharField(max_length=10)
+    funcionalidade = models.CharField(max_length=60, blank=True, default="")  # só em atividade
+    usuario = models.CharField(max_length=64, blank=True, default="")  # HMAC do pseudônimo recebido
+    ocorrido_em = models.DateTimeField(db_index=True)
+    recebido_em = models.DateTimeField(auto_now_add=True)
+    sintetico = models.BooleanField(default=False)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["produto", "id_externo"], name="vetor_evento_uso_unico")]
+        indexes = [models.Index(fields=["produto", "tipo", "ocorrido_em"])]
