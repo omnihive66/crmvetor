@@ -79,7 +79,7 @@ e-mails: 1 "Incidente aberto" ao mapear; a recuperação, dentro de 30 min, fico
 
 ### Testes automáticos
 - `vetor/tests`: **103 passaram** (12 novos).
-- Suíte oficial ampliada: ver `evidencias/07/pytest.txt`.
+- Suíte oficial ampliada: **1006 passaram, 17 falharam**. As 17 são as mesmas divergências intencionais da SPEC-06, comparadas linha a linha, sem nenhuma falha nova (`evidencias/07/pytest.txt`).
 
 ## Problemas encontrados e corrigidos no caminho
 - **Limite do Beszel com nome de servidor com espaço:** a métrica saía errada ("web-249341 cpu"). A QA pegou. Agora a métrica é tirada da lista fixa de métricas do Beszel; teste com nomes compostos e "15m load".
