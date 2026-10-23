@@ -138,3 +138,58 @@ class ParticipacaoEtapa(models.Model):
     class Meta:
         ordering = ["inicio", "id"]
         indexes = [models.Index(fields=["historia", "fim"])]
+
+
+# Minhas demandas, lembretes e agente (SPEC-05) -----------------------------------------------
+
+class Lembrete(models.Model):
+    """Privado do dono: nenhuma consulta o expõe a outra pessoa, nem a administradores ou superusuários."""
+    ABERTO, CONCLUIDO, CANCELADO = "aberto", "concluido", "cancelado"
+    ESTADOS = [(ABERTO, "Aberto"), (CONCLUIDO, "Concluído"), (CANCELADO, "Cancelado")]
+    RECORRENCIAS = [("", "Não repete"), ("diaria", "Diária"), ("semanal", "Semanal"), ("mensal", "Mensal")]
+
+    dono = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="vetor_lembretes")
+    titulo = models.CharField(max_length=200)
+    notas = models.TextField(blank=True, default="")
+    vencimento = models.DateTimeField(null=True, blank=True)  # UTC; exibido em America/Sao_Paulo
+    recorrencia = models.CharField(max_length=10, choices=RECORRENCIAS, blank=True, default="")
+    avisar_email = models.BooleanField(default=False)
+    estado = models.CharField(max_length=10, choices=ESTADOS, default=ABERTO)
+    # Referências opcionais: só aparecem enquanto o dono tiver acesso a elas (nada é copiado para cá).
+    cliente = models.ForeignKey("vetor.Cliente", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    projeto = models.ForeignKey("projects.Project", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    historia = models.ForeignKey("userstories.UserStory", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    notificado_em = models.DateTimeField(null=True, blank=True)  # aviso do vencimento atual já dado (idempotência)
+    visto_em = models.DateTimeField(null=True, blank=True)
+    convertido_em = models.ForeignKey("userstories.UserStory", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    criado_em = models.DateTimeField(auto_now_add=True)
+    atualizado_em = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = [models.F("vencimento").asc(nulls_last=True), "-criado_em"]
+        indexes = [models.Index(fields=["estado", "notificado_em", "vencimento"])]
+
+
+class TokenAgente(models.Model):
+    """Token pessoal do agente externo: age só como o próprio dono, só nas rotas /vetor/agente e só nos escopos dados."""
+    LEMBRETES, DEMANDAS = "lembretes", "demandas"
+    dono = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="vetor_tokens_agente")
+    nome = models.CharField(max_length=80)
+    prefixo = models.CharField(max_length=12, db_index=True)  # identifica o token na tela sem revelá-lo
+    hash = models.CharField(max_length=64, unique=True)       # sha256; o token em si nunca é guardado
+    escopos = models.JSONField(default=list)
+    criado_em = models.DateTimeField(auto_now_add=True)
+    usado_em = models.DateTimeField(null=True, blank=True)
+    revogado_em = models.DateTimeField(null=True, blank=True)
+
+
+class RequisicaoAgente(models.Model):
+    """Uma por Idempotency-Key: repetir a mesma chave devolve o mesmo resultado. Serve também ao limite por minuto."""
+    token = models.ForeignKey(TokenAgente, on_delete=models.CASCADE, related_name="requisicoes")
+    chave = models.CharField(max_length=100)
+    status = models.PositiveSmallIntegerField()
+    resposta = models.JSONField(default=dict)
+    criado_em = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["token", "chave"], name="vetor_agente_chave_unica")]
