@@ -1,0 +1,16 @@
+# ./scripts/vetor.sh backup — 2026-10-23T13:09:22Z
+Backup em backups/20261023T130922Z
+
+# ./scripts/vetor.sh restaurar-teste backups/20261023T130922Z
+restaurado: users_user=7 projects_project=5 userstories_userstory=21 tasks_task=0 attachments_attachment=1 vetor_cliente=4 vetor_documento=6 vetor_reuniao=1 vetor_lembrete=3 vetor_auditoria=84 
+migrações pendentes: Planned operations:
+  No planned migration operations.
+arquivos de mídia no backup: 13
+erros do pg_restore: 0 linha(s)
+Restauração isolada: ok em 10 s
+exit=0
+
+# banco em uso, logo depois (a auditoria ganha 2 linhas: os registros do próprio backup e da restauração):
+em uso: users_user=7 projects_project=5 userstories_userstory=21 tasks_task=0 attachments_attachment=1 vetor_cliente=4 vetor_documento=6 vetor_reuniao=1 vetor_lembrete=3 vetor_auditoria=86 
+mídia em uso: 13 arquivos
+# containers/redes de restauração restantes: 0/0

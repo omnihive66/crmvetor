@@ -1,0 +1,23 @@
+# axe-core 4.10.2 (WCAG 2.1 A/AA), telas próprias da Vetor, 1440 px e 390 px — 2026-10-23T13:15:21Z
+# 1ª rodada: 1 violação (serious scrollable-region-focusable na tabela da aba Custos a 390 px); corrigido: contêineres de tabela com tabindex=0
+1440 vetor/clientes/ → sem violações
+1440 vetor/clientes/cliente.html?id=1 → sem violações
+1440 vetor/clientes/cliente.html?id=1&aba=operacao → sem violações
+1440 vetor/clientes/cliente.html?id=1&aba=custos → sem violações
+1440 vetor/demandas/ → sem violações
+1440 vetor/minhas-demandas/ → sem violações
+1440 vetor/monitoramento/ → sem violações
+1440 vetor/custos/ → sem violações
+1440 vetor/busca/?q=Carga → sem violações
+1440 vetor/administracao/ → sem violações
+390 vetor/clientes/ → sem violações
+390 vetor/clientes/cliente.html?id=1 → sem violações
+390 vetor/clientes/cliente.html?id=1&aba=operacao → sem violações
+390 vetor/clientes/cliente.html?id=1&aba=custos → sem violações
+390 vetor/demandas/ → sem violações
+390 vetor/minhas-demandas/ → sem violações
+390 vetor/monitoramento/ → sem violações
+390 vetor/custos/ → sem violações
+390 vetor/busca/?q=Carga → sem violações
+390 vetor/administracao/ → sem violações
+total de regras violadas: 0

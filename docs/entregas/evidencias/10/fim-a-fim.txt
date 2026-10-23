@@ -1,0 +1,9 @@
+OK  1. cliente "[FICTÍCIO] Fim a Fim 8990"
+OK  2. projeto "[FICTÍCIO] Implantação 8990" ligado ao cliente
+OK  3. demanda #1 em "A fazer"
+OK  4. colaboração: 2 comentários e mudança de etapa no histórico
+OK  5. PR #1 ligado à demanda (open)
+OK  6. incidente aberto com demanda #2 no projeto
+OK  7. monitor recuperado (true), PR merged (true), demanda ainda em "Desenvolvimento" até alguém concluir
+OK  8. demanda concluída por admin.dev: true
+OK  9. painel do cliente: 1 monitor (quedas em 30 dias: 1), pendências abertas: 0

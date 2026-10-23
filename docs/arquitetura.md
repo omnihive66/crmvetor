@@ -33,6 +33,8 @@ navegador ──► taiga-gateway (nginx :9000)
 | `docs/integracoes/monitoramento.md` | contrato do evento, regras de incidente e configuração do Kuma e do Beszel (SPEC-07) |
 | `docs/integracoes/telemetria-uso.md` | contrato de eventos de uso dos produtos dos clientes (SPEC-08) |
 | `docs/integracoes/custos.md` | regras de cálculo, importação CSV e o que falta para AWS/Oracle (SPEC-09) |
+| `docs/manual-usuario.md`, `docs/manual-operacao.md`, `docs/operacao/` | manuais, inventário de dependências e plano de produção (SPEC-10) |
+| `.github/workflows/ci.yml` | CI: testes, sintaxe, compose, busca de segredos, build das imagens |
 | `docs/integracoes/github.md` | o que sincroniza com o GitHub, em qual direção, e como configurar (SPEC-06) |
 | `infra/taiga-gateway.conf` | gateway oficial sem a seção que servia exportações sem token |
 | `scripts/qa/` | capturas de tela, teclado/zoom e menu por papel (Playwright) |

@@ -95,7 +95,7 @@ async function carregarIncidentes() {
   try {
     const lista = (await chamar(`/vetor/incidentes${estado ? "?estado=" + estado : ""}`)).corpo;
     if (!lista.length) return alvo.replaceChildren(el("div", { class: "card estado" }, el("p", { text: estado === "aberto" ? "Nenhum incidente aberto nos seus projetos." : "Nenhum incidente." })));
-    alvo.replaceChildren(el("div", { class: "card tabela" }, el("table", {}, el("caption", { class: "sr", text: "Incidentes" }),
+    alvo.replaceChildren(el("div", { class: "card tabela", tabindex: "0" }, el("table", {}, el("caption", { class: "sr", text: "Incidentes" }),
       el("thead", {}, el("tr", {}, ...["Recurso", "Projeto", "Tipo", "Estado", "Aberto", "Recuperado", "Alertas", "Demanda", ""].map(t => el("th", { scope: "col", text: t })))),
       el("tbody", {}, ...lista.map(i => el("tr", {},
         el("td", {}, el("strong", { text: i.recurso.nome }), el("div", { class: "vt-meta", text: `${i.recurso.provedor} · ${i.resumo}` })),
@@ -136,7 +136,7 @@ async function carregarRecursos() {
   try {
     const lista = (await chamar("/vetor/recursos-monitorados")).corpo;
     if (!lista.length) return alvo.replaceChildren(el("p", { class: "vt-meta", text: "Nenhum recurso recebido ainda." }));
-    alvo.replaceChildren(el("div", { class: "card tabela" }, el("table", {}, el("caption", { class: "sr", text: "Recursos monitorados" }),
+    alvo.replaceChildren(el("div", { class: "card tabela", tabindex: "0" }, el("table", {}, el("caption", { class: "sr", text: "Recursos monitorados" }),
       el("thead", {}, el("tr", {}, ...["Recurso", "Provedor", "Situação", "Projeto"].map(t => el("th", { scope: "col", text: t })))),
       el("tbody", {}, ...lista.map(r => {
         const msg = el("span", { role: "status", class: "vt-meta" });
@@ -161,7 +161,7 @@ async function carregarFalhas() {
   try {
     const lista = (await chamar("/vetor/eventos-monitoramento?processamento=falhou")).corpo;
     if (!lista.length) return alvo.replaceChildren(el("p", { class: "vt-meta", text: "Nenhum evento com falha." }));
-    alvo.replaceChildren(el("div", { class: "card tabela" }, el("table", {}, el("caption", { class: "sr", text: "Eventos com falha" }),
+    alvo.replaceChildren(el("div", { class: "card tabela", tabindex: "0" }, el("table", {}, el("caption", { class: "sr", text: "Eventos com falha" }),
       el("thead", {}, el("tr", {}, ...["Recebido", "Provedor", "Recurso", "Tentativas", "Erro", ""].map(t => el("th", { scope: "col", text: t })))),
       el("tbody", {}, ...lista.map(ev => {
         const msg = el("span", { role: "status" }), tent = el("td", { text: String(ev.tentativas) }), erro = el("td", { class: "vt-meta", text: ev.erro });

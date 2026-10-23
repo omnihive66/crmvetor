@@ -25,21 +25,30 @@ x-vetor-back-environment: &vetor-back-environment
   VETOR_MONITOR_RETENCAO_DIAS: "${VETOR_MONITOR_RETENCAO_DIAS:-90}"
   VETOR_USO_RETENCAO_DIAS: "${VETOR_USO_RETENCAO_DIAS:-180}"
   VETOR_FINANCEIRO_USUARIOS: "${VETOR_FINANCEIRO_USUARIOS:-}"
+  VETOR_BACKUP_MAX_HORAS: "${VETOR_BACKUP_MAX_HORAS:-26}"
   CELERY_TIMEZONE: "America/Sao_Paulo"
   PUBLIC_REGISTER_ENABLED: "False"
   SESSION_COOKIE_SECURE: "${COOKIES_SECURE}"
   CSRF_COOKIE_SECURE: "${COOKIES_SECURE}"
 
+# Retenção de logs (SPEC-10): até 5 arquivos de 10 MB por container; o mais antigo é descartado.
+x-logs: &logs
+  logging:
+    driver: json-file
+    options: {max-size: "10m", max-file: "5"}
+
 services:
   taiga-db:
+    <<: *logs
     image: postgres:12.3@sha256:a06e6e6e519b7a329c419f8221edec66cfc45511e8b80e262c12103ba745cf19
   taiga-back:
-    <<: *vetor-back-image
+    <<: [*logs, *vetor-back-image]
     environment: *vetor-back-environment
   taiga-async:
-    <<: *vetor-back-image
+    <<: [*logs, *vetor-back-image]
     environment: *vetor-back-environment
   taiga-front:
+    <<: *logs
     # Front oficial com a marca aplicada no build (vetor-front/). O contexto é a raiz do repositório.
     image: vetor/taiga-front:6.10.3-vetor
     build:
@@ -50,27 +59,32 @@ services:
       PUBLIC_REGISTER_ENABLED: "false"
       VETOR_SOURCE_URL: "${VETOR_SOURCE_URL}"
   taiga-events:
+    <<: *logs
     # Oficial + autorização das assinaturas do WebSocket (vetor-events/).
     image: vetor/taiga-events:6.10.0-vetor
     build:
       context: ../..
       dockerfile: vetor-events/Dockerfile
   taiga-protected:
+    <<: *logs
     # Oficial + exportações de projeto com token assinado (vetor-protected/).
     image: vetor/taiga-protected:6.10.1-vetor
     build:
       context: ../..
       dockerfile: vetor-protected/Dockerfile
   taiga-async-rabbitmq:
+    <<: *logs
     image: rabbitmq:3.8-management-alpine@sha256:c3e526769bfd885c898d1132e1008b216800e8543619c30d5959b220285564ef
   taiga-events-rabbitmq:
+    <<: *logs
     image: rabbitmq:3.8-management-alpine@sha256:c3e526769bfd885c898d1132e1008b216800e8543619c30d5959b220285564ef
   taiga-gateway:
+    <<: *logs
     image: nginx:1.19-alpine@sha256:07ab71a2c8e4ecb19a5a5abcfb3a4f175946c001c8af288b1aa766d67b0d05d2
     ports: !override
       - "${VETOR_HTTP_PORT}:80"
     volumes:
       - ../../infra/taiga-gateway.conf:/etc/nginx/conf.d/default.conf:ro
   taiga-manage:
-    <<: *vetor-back-image
+    <<: [*logs, *vetor-back-image]
     environment: *vetor-back-environment

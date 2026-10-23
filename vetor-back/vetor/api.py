@@ -195,6 +195,16 @@ def _validar_perfil(data, parcial=False):
     return dados
 
 
+class SaudeViewSet(SomenteAdministrador, GenericViewSet):
+    """Saúde operacional (SPEC-10): só o Administrador."""
+    permission_classes = ()
+
+    def list(self, request, *args, **kwargs):
+        self.check_permissions(request, "list")
+        from . import saude
+        return response.Ok(saude.estado())
+
+
 class AuditoriaSerializer(serializers.LightSerializer):
     id = Field()
     ocorrido_em = Field()

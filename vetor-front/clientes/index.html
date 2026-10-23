@@ -96,7 +96,7 @@ function cartoes(lista) {
     el("span", { class: "vt-meta", text: `${c.projetos.length} projeto(s) visível(is)` }))));
 }
 function tabela(lista) {
-  return el("div", { class: "card tabela" }, el("table", {},
+  return el("div", { class: "card tabela", tabindex: "0" }, el("table", {},
     el("caption", { class: "sr", text: "Clientes" }),
     el("thead", {}, el("tr", {}, ...["Nome", "CNPJ", "Ciclo", "Responsável", "Local", "Projetos"].map(t => el("th", { scope: "col", text: t })))),
     el("tbody", {}, ...lista.map(c => el("tr", {},
