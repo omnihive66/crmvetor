@@ -39,6 +39,7 @@
     var lista = [
       ["", "Visão geral", "icon-dashboard", /^$/],
       ["vetor/clientes/", "Clientes", "icon-briefcase", /^vetor\/clientes\//],
+      ["vetor/demandas/", "Demandas", "icon-clipboard", /^vetor\/demandas\//],
       ["projects/", "Projetos", "icon-folder", /^(projects|project)\//],
     ];
     if (me && me.administrador) lista.push(["vetor/administracao/", "Administração", "icon-settings", /^vetor\/administracao\//]);

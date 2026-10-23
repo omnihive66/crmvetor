@@ -1,0 +1,8 @@
+# ./scripts/test-backend.sh --ds=vetor.tests.settings vetor/tests <lista ampliada da SPEC-02> + test_history.py,
+#   test_custom_attributes_user_stories.py, test_userstories_update_kanban_order.py — 23/10/2026
+17 failed, 923 passed, 11007 warnings in 1846.49s (0:30:46)
+# 16 falhas idênticas às da SPEC-02/03 (admin do projeto não configura integrações; feedback desligado).
+# 1 nova e esperada: test_projects_choices_resources::test_project_template_list espera exatamente 1 modelo de
+#   projeto no banco de teste; a migração vetor.0004 acrescenta o "Kanban (fluxo Vetor)" (id 1001).
+# Nenhuma falha em histórico, campos personalizados, ordenação do kanban, OCC ou histórias.
+# Rodada isolada da Vetor: vetor/tests → 58 passed

@@ -5,6 +5,7 @@ from django.contrib.auth import get_user_model
 from django.db.models import Q
 from django.db.models.signals import post_delete, post_save, pre_save
 
+from taiga.projects.custom_attributes.models import UserStoryCustomAttribute
 from taiga.projects.models import Membership
 from taiga.users.models import Role
 
@@ -92,6 +93,15 @@ def _garantir_outro_administrador(user_id):
         permissoes.negar("É preciso manter pelo menos um administrador ativo.")
 
 
+PRIORIDADES = ["Baixa", "Média", "Alta", "Urgente"]
+
+
+def prioridade_post_save(sender, instance, created, **kwargs):
+    # O modelo de projeto do Taiga não guarda as opções de um campo lista: o "Prioridade" do fluxo Vetor nasceria vazio.
+    if created and instance.name == "Prioridade" and instance.type == "dropdown" and not instance.extra:
+        sender.objects.filter(pk=instance.pk).update(extra=PRIORIDADES)
+
+
 def conectar():
     User = get_user_model()
     for sinal, func, modelo in [
@@ -100,5 +110,6 @@ def conectar():
         (pre_save, role_pre_save, Role), (post_save, role_post_save, Role),
         (pre_save, perfil_pre_save, Perfil), (post_save, perfil_post_save, Perfil),
         (pre_save, user_pre_save, User), (post_save, user_post_save, User),
+        (post_save, prioridade_post_save, UserStoryCustomAttribute),
     ]:
         sinal.connect(func, sender=modelo, dispatch_uid=f"vetor.{func.__name__}")

@@ -80,6 +80,11 @@ tpl = sub(tpl, r'<div class="logo"><\?xml.*?</svg>' + WS + '</div>' + WS + '<h1>
 # "Taiga Logo" restante é o formato de arquivo do Taiga no importador: mantido.
 write(f"{version}/js/templates.js", tpl)
 
+# Criar projeto: a opção Kanban usa o modelo "Kanban (fluxo Vetor)" (migração vetor.0004, id 1001).
+app = (html / version / "js/app.js").read_text(encoding="utf-8")
+app = sub(app, r"this\.projectForm\.creation_template=2\b", "this.projectForm.creation_template=1001", 1, "modelo Kanban da Vetor")
+write(f"{version}/js/app.js", app)
+
 # 3. Textos pt-BR com a marca do Taiga (mescla só as chaves sobrescritas).
 def merge(base, over, path=""):
     for k, v in over.items():
@@ -133,13 +138,15 @@ write("index.html", idx)
 conf = (html / "conf.json.template").read_text(encoding="utf-8")
 conf = sub(conf, r'"supportUrl": "[^"]*"', '"supportUrl": "${VETOR_SOURCE_URL}"', 1, "supportUrl")
 conf = sub(conf, r'"feedbackEnabled": true', '"feedbackEnabled": false', 1, "feedback")
+# isSaas só esconde a newsletter do taiga.io (pop-up ao criar projeto e bloco em Notificações): não é produto Taiga.
+conf = sub(conf, r'"feedbackEnabled": false,', '"feedbackEnabled": false,\n    "isSaas": true,', 1, "newsletter do Taiga")
 write("conf.json.template", conf)
 
 (out / "vetor").mkdir(parents=True, exist_ok=True)
 for name in ("logo-vetor-original.jpg", "favicon.svg"):
     shutil.copy(src / name, out / "vetor" / name)
 # Telas próprias e a base compartilhada (ui/): o sprite de ícones do Taiga fica na pasta versionada.
-for pasta in ("ui", "administracao", "clientes", "busca"):
+for pasta in ("ui", "administracao", "clientes", "busca", "demandas"):
     for arq in (src / pasta).iterdir():
         texto = arq.read_text(encoding="utf-8").replace("__SPRITE__", f"{version}/svg/sprite.svg")
         write(f"vetor/{pasta}/{arq.name}", texto)
