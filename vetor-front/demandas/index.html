@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demandas - Vetor Sistemas</title>
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="stylesheet" href="../ui/vetor-ui.css">
+<link rel="stylesheet" href="../ui/shell.css">
+<script src="../ui/shell.js" data-sprite="__SPRITE__"></script>
+<style>
+  .etapa { display: inline-flex; align-items: center; gap: 6px; }
+  .etapa::before { content: ""; width: 10px; height: 10px; border-radius: 2px; background: var(--cor, var(--muted)); }
+  .bloqueada { color: var(--danger); font-weight: 600; }
+  td select { width: auto; min-width: 150px; }
+</style>
+</head>
+<body>
+<div class="vt-topo"><nav aria-label="Você está em"><a href="../../">Visão geral</a> › Demandas</nav></div>
+<main>
+  <div class="vt-cabecalho"><div><h1>Demandas</h1><p class="vt-meta" id="resumo" aria-live="polite"></p></div></div>
+  <form class="filtros" id="filtros">
+    <label class="sr" for="f-cliente">Cliente</label><select id="f-cliente" name="cliente"><option value="">Todos os clientes</option></select>
+    <label class="sr" for="f-projeto">Projeto</label><select id="f-projeto" name="projeto"><option value="">Todos os projetos</option></select>
+    <label class="sr" for="f-resp">Responsável</label><select id="f-resp" name="responsavel"><option value="">Qualquer responsável</option></select>
+    <label class="sr" for="f-prazo">Prazo</label>
+    <select id="f-prazo" name="prazo"><option value="">Qualquer prazo</option><option value="vencidas">Vencidas</option><option value="7dias">Próximos 7 dias</option><option value="sem">Sem prazo</option></select>
+    <label class="check"><input type="checkbox" name="bloqueadas"> Só bloqueadas</label>
+    <label class="check"><input type="checkbox" name="concluidas"> Incluir concluídas</label>
+  </form>
+  <div id="lista"><div class="card estado" role="status">Carregando…</div></div>
+  <div class="pager" id="pager"></div>
+  <p class="vt-meta">“Mover para” muda a etapa sem arrastar (teclado). Se alguém tiver mudado a mesma demanda antes, nada é gravado e o valor volta ao atual.</p>
+</main>
+
+<dialog id="dlg-etapas" aria-labelledby="dlg-etapas-titulo">
+  <h2 id="dlg-etapas-titulo">Participação por etapa</h2>
+  <div id="etapas-conteudo"></div>
+  <div class="acoes"><button type="button" class="sec" onclick="this.closest('dialog').close()">Fechar</button></div>
+</dialog>
+
+<script>
+"use strict";
+const { el, chamar, RAIZ } = Vetor;
+const CHAVE = "vetor-filtros-demandas";
+let pagina = 1, salvo = false, statusPorProjeto = {};
+const dia = d => d ? new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeZone: "UTC" }).format(new Date(d + "T00:00:00Z")) : "—";
+
+let fila = Promise.resolve();
+function salvar(valor) {  // userstorage do Taiga: PATCH atualiza só o valor; em fila para não criar a chave duas vezes
+  fila = fila.then(async () => {
+    try { await chamar(salvo ? `/user-storage/${CHAVE}` : "/user-storage", { method: salvo ? "PATCH" : "POST", body: JSON.stringify(salvo ? { value: valor } : { key: CHAVE, value: valor }) }); salvo = true; }
+    catch (e) { console.warn("Filtros não salvos:", e.message); }
+  });
+}
+function filtros() {
+  const f = document.getElementById("filtros");
+  return { cliente: f.cliente.value, projeto: f.projeto.value, responsavel: f.responsavel.value, prazo: f.prazo.value, bloqueadas: f.bloqueadas.checked, concluidas: f.concluidas.checked };
+}
+
+async function etapasDoProjeto(id) {
+  if (!statusPorProjeto[id]) statusPorProjeto[id] = chamar(`/userstory-statuses?project=${id}`).then(r => r.corpo.sort((a, b) => a.order - b.order));
+  return statusPorProjeto[id];
+}
+
+async function mover(d, select, msg, mostrar) {
+  const anterior = d.etapa.id;
+  select.disabled = true; msg.className = "vt-meta"; msg.textContent = "Movendo…";
+  try {
+    const { corpo } = await chamar(`/userstories/${d.id}`, { method: "PATCH", body: JSON.stringify({ status: Number(select.value), version: d.version }) });
+    d.version = corpo.version; d.etapa.id = corpo.status; mostrar();
+    msg.className = "ok"; msg.textContent = "Movida.";
+  } catch (e) {
+    // A tela volta ao que está gravado no servidor agora (outra pessoa pode ter mudado a etapa).
+    select.value = anterior;
+    try { const atual = (await chamar(`/userstories/${d.id}`)).corpo; d.version = atual.version; d.etapa.id = atual.status; select.value = atual.status; mostrar(); }
+    catch (e2) { /* sem como confirmar: mantém o último valor conhecido e avisa */ }
+    msg.className = "erro";
+    msg.textContent = e.corpo && e.corpo.version ? "Outra pessoa mudou esta demanda antes. A etapa mostrada agora é a gravada; escolha de novo se quiser." : e.message;
+  } finally { select.disabled = false; }
+}
+
+async function verEtapas(d) {
+  const alvo = document.getElementById("etapas-conteudo"), dlg = document.getElementById("dlg-etapas");
+  alvo.replaceChildren(el("p", { class: "vt-meta", role: "status", text: "Carregando…" })); dlg.showModal();
+  try {
+    const lista = (await chamar(`/vetor/participacoes?historia=${d.id}`)).corpo;
+    const q = Vetor.quando;
+    alvo.replaceChildren(el("p", { text: `#${d.ref} ${d.assunto}` }), lista.length ? el("div", { class: "tabela" }, el("table", {},
+      el("thead", {}, el("tr", {}, ...["Pessoa", "Etapa", "Início", "Fim"].map(t => el("th", { scope: "col", text: t })))),
+      el("tbody", {}, ...lista.map(p => el("tr", {}, el("td", { text: p.usuario_nome }), el("td", { text: p.etapa }),
+        el("td", { text: `${q.format(new Date(p.inicio))} · ${p.autor_inicio}` }),
+        el("td", { text: p.fim ? `${q.format(new Date(p.fim))} · ${p.autor_fim}` : "em andamento" }))))))
+      : el("p", { class: "vt-meta", text: "Ninguém atribuído a esta demanda em etapas abertas até agora." }));
+  } catch (e) { alvo.replaceChildren(el("p", { class: "erro", text: e.message })); }
+}
+
+async function linha(d) {
+  const etapas = await etapasDoProjeto(d.projeto.id).catch(() => []);
+  const msg = el("span", { role: "status", "aria-live": "polite" });
+  const select = el("select", { "aria-label": `Mover #${d.ref} ${d.assunto} para outra etapa` }, ...etapas.map(s => el("option", { value: s.id, text: s.name })));
+  const marcador = el("span", { class: "etapa" });
+  const mostrar = () => {  // a coluna Etapa sempre igual ao que está gravado (depois de mover ou de um conflito)
+    const s = etapas.find(x => x.id === d.etapa.id) || { name: d.etapa.nome, color: d.etapa.cor };
+    marcador.textContent = s.name; marcador.style.setProperty("--cor", s.color);
+  };
+  mostrar();
+  select.value = d.etapa.id; select.onchange = () => mover(d, select, msg, mostrar);
+  return el("tr", {},
+    el("td", {}, el("a", { href: `${RAIZ}project/${d.projeto.slug}/us/${d.ref}`, text: `#${d.ref} ${d.assunto}` }),
+      d.bloqueada ? el("div", { class: "bloqueada", text: `Bloqueada${d.motivo_bloqueio ? ": " + d.motivo_bloqueio : ""}` }) : null),
+    el("td", { text: d.cliente ? d.cliente.nome : "Interno" }), el("td", { text: d.projeto.nome }),
+    el("td", {}, marcador),
+    el("td", { text: [d.responsavel && d.responsavel.nome, ...d.colaboradores.map(c => c.nome)].filter(Boolean).join(", ") || "—" }),
+    el("td", { text: dia(d.prazo) }),
+    el("td", {}, select, " ", msg),
+    el("td", {}, el("button", { type: "button", class: "sec", text: "Etapas", "aria-label": `Participação por etapa de #${d.ref}`, onclick: () => verEtapas(d) })));
+}
+
+async function carregar() {
+  const lista = document.getElementById("lista"), f = filtros();
+  lista.replaceChildren(el("div", { class: "card estado", role: "status", text: "Carregando…" }));
+  const qs = new URLSearchParams({ page: pagina });
+  for (const [k, v] of Object.entries(f)) if (v) qs.set(k, v === true ? "true" : v);
+  try {
+    const { corpo, total, proxima } = await chamar(`/vetor/demandas?${qs}`);
+    document.getElementById("resumo").textContent = `${total} demanda(s) ${f.concluidas ? "" : "em aberto "}nos projetos que você acompanha`;
+    if (!corpo.length) {
+      lista.replaceChildren(el("div", { class: "card estado" }, el("p", { text: "Nenhuma demanda com esses filtros." }),
+        el("button", { type: "button", class: "sec", text: "Limpar filtros", onclick: () => { document.getElementById("filtros").reset(); aoFiltrar(); } })));
+    } else {
+      lista.replaceChildren(el("div", { class: "card tabela" }, el("table", {}, el("caption", { class: "sr", text: "Demandas" }),
+        el("thead", {}, el("tr", {}, ...["Demanda", "Cliente", "Projeto", "Etapa", "Responsáveis", "Prazo", "Mover para", ""].map(t => el("th", { scope: "col", text: t })))),
+        el("tbody", {}, ...await Promise.all(corpo.map(linha))))));
+    }
+    document.getElementById("pager").replaceChildren(el("span", { class: "vt-meta", text: `Página ${pagina}` }),
+      el("button", { type: "button", class: "sec", text: "Anterior", disabled: pagina <= 1, onclick: () => { pagina--; carregar(); } }),
+      el("button", { type: "button", class: "sec", text: "Próxima", disabled: !proxima, onclick: () => { pagina++; carregar(); } }));
+  } catch (e) {
+    lista.replaceChildren(el("div", { class: "card estado", role: "alert" }, el("p", { class: "erro", text: e.status === 401 ? "Sua sessão expirou." : "Não foi possível carregar: " + e.message }),
+      e.status === 401 ? el("a", { href: `${RAIZ}login`, text: "Entrar novamente" }) : el("button", { type: "button", class: "sec", text: "Tentar novamente", onclick: carregar })));
+  }
+}
+let espera;
+function aoFiltrar() { pagina = 1; clearTimeout(espera); espera = setTimeout(() => { salvar(filtros()); carregar(); }, 250); }
+
+async function iniciar() {
+  if (!Vetor.token()) return document.getElementById("lista").replaceChildren(el("div", { class: "card estado" }, el("p", { text: "Entre no sistema para ver as demandas." }), el("a", { href: `${RAIZ}login`, text: "Ir para o login" })));
+  const f = document.getElementById("filtros");
+  try {
+    const [opcoes, clientes, projetos] = await Promise.all([chamar("/vetor/clientes/opcoes"), chamar("/vetor/clientes?page_size=500"), chamar("/projects")]).then(r => r.map(x => x.corpo));
+    for (const c of clientes) f.cliente.append(el("option", { value: c.id, text: c.nome }));
+    for (const p of projetos) f.projeto.append(el("option", { value: p.id, text: p.name }));
+    for (const p of opcoes.pessoas) f.responsavel.append(el("option", { value: p.id, text: p.nome }));
+  } catch (e) { console.warn("Listas dos filtros:", e.message); }
+  try { const v = (await chamar(`/user-storage/${CHAVE}`)).corpo.value || {}; salvo = true;
+    for (const k of ["cliente", "projeto", "responsavel", "prazo"]) f[k].value = v[k] || ""; f.bloqueadas.checked = !!v.bloqueadas; f.concluidas.checked = !!v.concluidas;
+  } catch (e) { /* sem filtros salvos ainda */ }
+  f.addEventListener("change", aoFiltrar);
+  carregar();
+}
+iniciar();
+</script>
+</body>
+</html>

@@ -135,6 +135,8 @@ N = nativo, C = configuração, D = desenvolvimento.
 - `/media/exports/` era servido **sem token** pelo gateway oficial (proteção só pelo UUID no nome). **Corrigido na SPEC-02:** `infra/taiga-gateway.conf` + `vetor-protected/` (token assinado, validade `ATTACHMENTS_MAX_AGE`).
 - **`ATOMIC_REQUESTS = True` do Taiga não tem efeito** (está no nível de settings, não em `DATABASES`): requisições não são transacionais e um erro no meio deixa escrita parcial. A Vetor torna transacionais as escritas de projetos, memberships, papéis e perfis (`vetor.api.TransacaoNaEscrita`, SPEC-02).
 - **taiga-events aceitava qualquer assinatura:** qualquer usuário autenticado podia assinar `changes.project.<id>` de qualquer projeto (metadados) e `web_notifications.<id>` de outra pessoa (conteúdo das notificações). **Corrigido na SPEC-02:** `vetor-events/`.
+- O entrypoint oficial roda `loaddata initial_project_templates` a cada início (sobrescreve os modelos 1 e 2); o front usa os ids dos modelos direto no código.
+- O conf.json `isSaas: true` desliga a newsletter do taiga.io (pop-up ao criar projeto).
 - O `PUT` do userstorage exige a chave no corpo (sem ela devolve 400); para atualizar só o valor, use `PATCH`.
 - As listagens do Taiga não chamam `check_permissions` (o escopo vem só dos filtros). Endpoints novos precisam checar permissão também em `list`.
 - `SECRET_KEY` e senhas do `.env` oficial são fixas e fracas; substituídas por segredos aleatórios via `scripts/vetor.sh init-env`.
