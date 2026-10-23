@@ -13,14 +13,21 @@ pytestmark = pytest.mark.django_db
 B = "/api/v1/vetor/custos"
 
 
+CONF = {}
+
+
 @pytest.fixture(autouse=True)
 def ambiente(settings):
     settings.VETOR_PAPEL_SEM_PERFIL = "observador"
+    settings.VETOR_FINANCEIRO_USUARIOS = []  # fechado: só quem a fixture marcar como matriz
+    CONF["s"] = settings
 
 
-def pessoa(papel, ver_custos=True):
+def pessoa(papel, matriz=True):
     user = f.UserFactory.create()
-    Perfil.objects.create(user=user, papel=papel, ver_custos=ver_custos)
+    Perfil.objects.create(user=user, papel=papel, ver_custos=True)  # a opção antiga por pessoa não libera mais nada
+    if matriz:
+        CONF["s"].VETOR_FINANCEIRO_USUARIOS = [*CONF["s"].VETOR_FINANCEIRO_USUARIOS, user.username.lower()]
     return user
 
 
@@ -120,11 +127,11 @@ def test_ajuste_e_remocao_auditados_sem_valores(client, fin):
     assert not any(v in tudo for v in ("987", "123.45", "4321", "1111"))  # auditoria vista por quem não tem ver_custos
 
 
-def test_so_quem_tem_permissao_financeira_consulta_inclusive_api_e_exportacao(client, fin):
+def test_financeiro_fechado_para_o_usuario_matriz_inclusive_api_e_exportacao(client, fin):
     gestor, cliente = fin
     est = estimativa(client, gestor, cliente)
     api(client, gestor, "post", f"{B}/realizados", {"cliente": cliente.id, "periodo": "2026-10", "categoria": "infra", "valor": "120"})
-    sem = pessoa("administrador", ver_custos=False)  # nem o Administrador sem a permissão explícita
+    sem = pessoa("administrador", matriz=False)  # Administrador que não é o matriz: fechado
     for url in (f"{B}/estimativas", f"{B}/estimativas/{est}", f"{B}/realizados", f"{B}/realizados/exportar", f"{B}/orcamentos",
                 f"{B}/rateios", f"{B}/taxas", f"{B}/realizados?nao_alocados=true&periodo=2026-10"):
         assert api(client, sem, "get", url).status_code == 403, url
@@ -135,10 +142,19 @@ def test_so_quem_tem_permissao_financeira_consulta_inclusive_api_e_exportacao(cl
         assert "120" not in api(client, sem, "get", url).content.decode()
     exportado = (client.login(gestor), client.get(f"{B}/realizados/exportar?periodo=2026-10"))[1]
     assert exportado.status_code == 200 and "120" in exportado.content.decode() and exportado["Content-Type"].startswith("text/csv")
-    observador = pessoa("observador")  # vê custos, mas não altera
-    assert api(client, observador, "get", f"{B}/realizados").status_code == 200
-    assert api(client, observador, "post", f"{B}/realizados", {"cliente": cliente.id, "periodo": "2026-10", "categoria": "x", "valor": "1"}).status_code == 403
-    outro = pessoa("gestor")  # tem ver_custos mas não vê este cliente
+    outro_gestor = pessoa("gestor", matriz=False)  # gestor com a opção antiga "ver custos" ligada: fechado também
+    assert api(client, outro_gestor, "get", f"{B}/realizados").status_code == 403
+    assert api(client, outro_gestor, "post", f"{B}/realizados", {"cliente": cliente.id, "periodo": "2026-10", "categoria": "x", "valor": "1"}).status_code == 403
+    # Ninguém liga o financeiro pela tela/API: só no servidor.
+    admin = pessoa("administrador", matriz=False)
+    r = api(client, admin, "patch", f"/api/v1/vetor/perfis/{outro_gestor.id}", {"ver_custos": True})
+    assert r.status_code == 400 and "matriz" in r.content.decode()
+    assert api(client, gestor, "get", "/api/v1/vetor/perfis/me").json()["ver_custos"] is True
+    assert api(client, outro_gestor, "get", "/api/v1/vetor/perfis/me").json()["ver_custos"] is False
+    CONF["s"].VETOR_FINANCEIRO_USUARIOS = []  # vazio: ninguém, nem o matriz anterior
+    assert api(client, gestor, "get", f"{B}/realizados").status_code == 403
+    CONF["s"].VETOR_FINANCEIRO_USUARIOS = [gestor.username.lower()]
+    outro = pessoa("gestor")  # matriz, mas não vê este cliente
     assert api(client, outro, "get", f"{B}/realizados?cliente={cliente.id}").json() == []
 
 

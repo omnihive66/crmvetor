@@ -13,11 +13,9 @@ const { chromium } = require('playwright');
     p.api = (m, url, d) => p.evaluate(async ([m, url, d, t]) => { const r = await fetch('/api/v1' + url, { method: m, headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + t }, body: d ? JSON.stringify(d) : undefined }); return { s: r.status, j: await r.json().catch(() => null) }; }, [m, url, d, t]);
     return p;
   };
-  let p = await entrar(user, pw);
-  const pessoas = (await p.api('GET', '/vetor/perfis?page_size=100')).j;
-  const eu = pessoas.find(x => x.username === user), ele = pessoas.find(x => x.username === outro);
-  await p.api('PATCH', `/vetor/perfis/${eu.id}`, { ver_custos: true });  // a permissão financeira é explícita, até para o Administrador
-  await p.close(); p = await entrar(user, pw);
+  // <usuario> é o matriz (VETOR_FINANCEIRO_USUARIOS no servidor); <outro-usuario> não é, mesmo com a opção antiga "ver custos" ligada.
+  const p = await entrar(user, pw);
+  console.log('0. tentar liberar o financeiro pela API →', (await p.api('PATCH', `/vetor/perfis/${(await p.api('GET', '/vetor/perfis?page_size=100')).j.find(x => x.username === outro).id}`, { ver_custos: true })).s);
   const cliente = (await p.api('GET', `/vetor/clientes?q=${encodeURIComponent(nomeCliente)}`)).j[0];
   const mes = new Date().toISOString().slice(0, 7);
   // 1. Estimativa pela aba Custos do cliente
@@ -61,15 +59,13 @@ const { chromium } = require('playwright');
   console.log('   comparação com rateio e importação →', `realizado ${comp.realizado}, diferença ${comp.diferenca}, ${comp.percentual}%`, '|', comp.aviso_parcial);
   const dl = await Promise.all([p.waitForEvent('download'), p.click('#exportar')]);
   console.log('4. exportação →', dl[0].suggestedFilename());
-  // 5. Sem permissão financeira: sem menu, sem aba, API 403
-  await p.api('PATCH', `/vetor/perfis/${ele.id}`, { ver_custos: false });
+  // 5. Quem não é o matriz: sem menu, sem aba, API 403
   const q = await entrar(outro, outroPw);
   await q.goto(`http://localhost:9000/vetor/clientes/cliente.html?id=${cliente.id}`); await q.waitForSelector('.abas'); await q.waitForTimeout(800);
   console.log('5. sem permissão → aba Custos:', await q.$('#aba-custos') ? 'APARECE' : 'não aparece', '| menu Custos:', await q.$('.vt-shell a[href$="vetor/custos/"]') ? 'APARECE' : 'não aparece',
     '| API:', (await q.api('GET', `/vetor/custos/realizados?cliente=${cliente.id}`)).s, '| exportação:', (await q.api('GET', '/vetor/custos/realizados/exportar')).s);
   await q.goto('http://localhost:9000/vetor/custos/'); await q.waitForTimeout(800);
   console.log('   página Custos →', (await q.textContent('main')).trim());
-  await p.api('PATCH', `/vetor/perfis/${ele.id}`, { ver_custos: ele.ver_custos });  // volta como estava
   fs.unlinkSync(csv);
   await b.close();
 })().catch(e => { console.error(e.message); process.exit(1); });

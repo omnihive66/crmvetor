@@ -17,9 +17,9 @@
   - Alerta absoluto e percentual.
   - Parcial do mês sempre sinalizado.
   - Sem corte automático.
-- **Acesso:**
-  - Uma trava única na entrada de todas as rotas de custo (`initial`): sem `ver_custos`, 403, inclusive para o Administrador.
-  - Escrita só para gestor ou administrador.
+- **Acesso: fechado para o usuário matriz** (pedido da gestão, 23/10/2026):
+  - Uma trava única na entrada de todas as rotas de custo (`initial`): só os logins de `VETOR_FINANCEIRO_USUARIOS` (servidor) leem e alteram. Os demais recebem 403, inclusive outros administradores.
+  - A opção "Ver custos" por pessoa (SPEC-02) foi desativada: liberar o financeiro exige mudar o servidor, não um clique.
   - A auditoria registra campos e ids, nunca valores.
   - Aba e menu só aparecem com a permissão, e o servidor confere de novo.
 

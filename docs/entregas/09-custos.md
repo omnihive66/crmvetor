@@ -44,7 +44,9 @@ Data: 23/10/2026 • Spec: `specs/09-custos.md` • Branch: `spec-09-custos` (so
 **Migração:** `vetor.0010` cria seis tabelas próprias. Nenhuma tabela do Taiga é alterada.
 
 ## Configuração necessária
-Dar a opção **"Ver custos"** a quem pode consultar valores, em Administração → Pessoas. Ela é explícita: o Administrador também precisa tê-la. Na QA ela foi ligada para `admin.dev`, só no ambiente de desenvolvimento.
+O financeiro fica **fechado para o usuário matriz**. Informe o login dele em `VETOR_FINANCEIRO_USUARIOS` no `.env` do servidor e rode `./scripts/vetor.sh up`. Vazio deixa fechado para todos.
+- No ambiente de desenvolvimento, o matriz é `admin.dev`.
+- A antiga opção "Ver custos" da Administração foi removida da tela e não libera mais nada.
 
 ## Critérios de aceite
 
@@ -55,7 +57,7 @@ Dar a opção **"Ver custos"** a quem pode consultar valores, em Administração
 | Orçamento zero não divide por zero | **Atendido.** O percentual "não se aplica", e com gasto aparece o alerta "orçamento zero". | `test_orcamento_zero_…` |
 | Mesma importação não duplica | **Atendido.** A segunda importação do mesmo lote dá "0 importado(s), 2 já existia(m)". Um arquivo com uma linha inválida não grava nada. | `test_mesma_importacao_…`, `qa.txt` (item 3) |
 | Ajuste e remoção são auditados | **Atendido.** Alteração e remoção de item e de realizado ficam na auditoria **sem os valores** (verificado). | `test_ajuste_e_remocao_…` |
-| Só quem tem permissão financeira consulta, inclusive por API/exportação | **Atendido:** <ul><li>Sem "Ver custos", até o Administrador recebe 403 em todas as rotas (8 verificadas, inclusive a exportação). Sem sessão, 401.</li><li>Na tela, sem aba nem menu, e a página Custos explica o motivo.</li><li>Valores não aparecem no cliente, no painel nem na busca.</li><li>O observador com permissão vê mas não altera.</li><li>Um gestor com permissão não vê cliente fora do seu escopo.</li></ul>A trava foi desligada de propósito e o teste falhou. | `test_so_quem_tem_permissao_…`, `qa.txt` (item 5) |
+| Só quem tem permissão financeira consulta, inclusive por API/exportação, **fechado para o usuário matriz** | **Atendido:** <ul><li>Administrador ou gestor que não é o matriz recebe 403 em todas as rotas (8 verificadas, inclusive a exportação), mesmo com a antiga "Ver custos" ligada. Sem sessão, 401.</li><li>Com a lista vazia, nem o matriz anterior entra.</li><li>Tentar liberar pela API dá 400.</li><li>Na tela, sem aba nem menu.</li><li>Valores não aparecem no cliente, no painel nem na busca.</li><li>O matriz não vê cliente fora do seu escopo.</li></ul>A trava foi desligada de propósito e o teste falhou. | `test_so_quem_tem_permissao_…`, `qa.txt` (item 5) |
 | Decimais, moeda e período; conversão só com taxa, data e origem | **Atendido.** R$ 0,000125 preservado. USD sem taxa fica pendente; com a taxa PTAX registrada, a conversão mostra taxa, data e origem. | `test_conversao_…`, `test_mesma_importacao_…` |
 | Custo ≠ preço; fixo, variável, único e recorrente separados | **Atendido** | `test_custo_e_preco_…` |
 | Versões e premissas | **Atendido.** A v1 fica congelada (edição dá 400) e a v2 copia os itens. | `test_versoes_…` |
@@ -70,11 +72,12 @@ Dar a opção **"Ver custos"** a quem pode consultar valores, em Administração
 3. importação 1 → 2 importados, 1 não alocado · importação 2 → 0 importados, 2 já existiam
    não alocados → cluster R$ 300,00 (parcial) · rateio 100% → nada não alocado · "não é fatura final"
 4. exportação → custos-2026-10.csv
-5. sem permissão → sem aba, sem menu, API 403, exportação 403
+0. liberar o financeiro pela API → 400
+5. observador.dev (não é o matriz, "ver custos" antigo ligado) → sem aba, sem menu, API 403, exportação 403
 ```
 
 ### Testes automáticos
-- `vetor/tests`: **123 passaram** (11 novos).
+- `vetor/tests`: **123 passaram** (11 novos; o de permissão cobre a regra do usuário matriz).
 - Suíte oficial ampliada: ver `evidencias/09/pytest.txt`.
 
 ## Problemas encontrados e corrigidos no caminho

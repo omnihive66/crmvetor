@@ -1,10 +1,11 @@
+0. tentar liberar o financeiro pela API → 400
 1. totais (Custo mensal) → Custo mensalR$ 50,00R$ 20,00R$ 70,00R$ 7,00R$ 77,00
 2. comparação → Orçamento R$ 100,00 · Realizado R$ 120,00 · Diferença +R$ 20,00 · +20,00%Acima do orçamento em 20,00 BRL.Desvio de 20,00% (limite 10,00%).
 3. importação 1 → 2 importado(s), 0 já existia(m) (não duplicados), 1 não alocado(s).
 3. importação 2 → 0 importado(s), 2 já existia(m) (não duplicados), 0 não alocado(s).
-   não alocados → cluster · [FICTÍCIO] Kubernetes compartilhado: R$ 300,00parcial · qa-89877
+   não alocados → cluster · [FICTÍCIO] Kubernetes compartilhado: R$ 300,00parcial · qa-69935
    rateio → Regra salva. | não alocados depois → Nada não alocado neste mês.
    comparação com rateio e importação → realizado 465.50, diferença 365.50, 365.50% | Inclui consumo parcial do mês: não é fatura final.
 4. exportação → custos-2026-10.csv
 5. sem permissão → aba Custos: não aparece | menu Custos: não aparece | API: 403 | exportação: 403
-   página Custos → Sem permissão financeira. Peça ao Administrador a opção “Ver custos”.
+   página Custos → O financeiro é restrito ao usuário matriz.

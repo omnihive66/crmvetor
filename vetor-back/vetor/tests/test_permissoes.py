@@ -180,11 +180,10 @@ def test_troca_de_papel_no_projeto_registra_quem_fez(client, projeto):
 
 def test_alteracao_de_perfil_auditada_com_antes_e_depois(client):
     admin, dev = pessoa("administrador"), pessoa("desenvolvedor")
-    api(client, admin, "patch", f"/api/v1/vetor/perfis/{dev.id}", {"papel": "gestor", "ver_custos": True})
+    api(client, admin, "patch", f"/api/v1/vetor/perfis/{dev.id}", {"papel": "gestor"})
     reg = Auditoria.objects.get(acao="perfil.alterado")
     assert reg.ator_id == admin.id
-    assert reg.detalhes["antes"] == {"papel": "desenvolvedor", "ver_custos": False}
-    assert reg.detalhes["depois"] == {"papel": "gestor", "ver_custos": True}
+    assert reg.detalhes["antes"]["papel"] == "desenvolvedor" and reg.detalhes["depois"]["papel"] == "gestor"
 
 
 # Acesso cruzado (critério de aceite) -----------------------------------------------------------
