@@ -1,0 +1,21 @@
+# ./scripts/test-backend.sh --ds=vetor.tests.settings vetor/tests <lista ampliada> — 23/10/2026 (versão final)
+17 failed, 1032 passed in 1220.49s (0:20:20)
+# As mesmas 17 divergências intencionais desde a SPEC-04 (comparadas linha a linha). Nenhuma falha nova.
+FAILED tests/integration/resources_permissions/test_feedback.py::test_feedback_create
+FAILED tests/integration/resources_permissions/test_modules_resources.py::test_modules_patch
+FAILED tests/integration/resources_permissions/test_modules_resources.py::test_modules_retrieve
+FAILED tests/integration/resources_permissions/test_projects_choices_resources.py::test_project_template_list
+FAILED tests/integration/resources_permissions/test_webhooks_resources.py::test_webhook_action_test
+FAILED tests/integration/resources_permissions/test_webhooks_resources.py::test_webhook_create
+FAILED tests/integration/resources_permissions/test_webhooks_resources.py::test_webhook_delete
+FAILED tests/integration/resources_permissions/test_webhooks_resources.py::test_webhook_list
+FAILED tests/integration/resources_permissions/test_webhooks_resources.py::test_webhook_patch
+FAILED tests/integration/resources_permissions/test_webhooks_resources.py::test_webhook_retrieve
+FAILED tests/integration/resources_permissions/test_webhooks_resources.py::test_webhook_update
+FAILED tests/integration/resources_permissions/test_webhooks_resources.py::test_webhooklogs_action_resend
+FAILED tests/integration/resources_permissions/test_webhooks_resources.py::test_webhooklogs_list
+FAILED tests/integration/resources_permissions/test_webhooks_resources.py::test_webhooklogs_retrieve
+FAILED tests/integration/test_hooks_github.py::test_api_get_project_modules
+FAILED tests/integration/test_hooks_github.py::test_api_patch_project_modules
+FAILED tests/integration/test_webhooks.py::test_webhook_action_test_transform_to_json
+# Rodada isolada da Vetor: vetor/tests → 129 passed
